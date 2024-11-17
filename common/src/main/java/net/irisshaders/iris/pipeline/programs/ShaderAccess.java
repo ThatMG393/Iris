@@ -52,4 +52,6 @@ public class ShaderAccess {
 	public static ShaderProgram MEKANISM_FLAME = new ShaderProgram(ResourceLocation.fromNamespaceAndPath("iris", "mekanism_flame"), DefaultVertexFormat.POSITION_TEX_COLOR, ShaderDefines.EMPTY);
 	public static ShaderProgram MEKASUIT = new ShaderProgram(ResourceLocation.fromNamespaceAndPath("iris", "mekasuit"), DefaultVertexFormat.NEW_ENTITY, ShaderDefines.EMPTY);
 	public static ShaderProgram IE_COMPAT = new ShaderProgram(ResourceLocation.fromNamespaceAndPath("iris", "ie_vbo"), IE_FORMAT, ShaderDefines.EMPTY);
+
+	// TODO SPS 1.21.2
 }

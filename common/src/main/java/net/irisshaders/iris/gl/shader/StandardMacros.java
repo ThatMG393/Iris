@@ -13,6 +13,7 @@ import net.irisshaders.iris.pbr.format.TextureFormatLoader;
 import net.irisshaders.iris.pipeline.WorldRenderingPhase;
 import net.irisshaders.iris.platform.IrisPlatformHelpers;
 import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20C;
@@ -45,6 +46,7 @@ public class StandardMacros {
 		ArrayList<StringPair> standardDefines = new ArrayList<>();
 
 		define(standardDefines, "MC_VERSION", getMcVersion());
+		define(standardDefines, "MC_MIPMAP_LEVEL", String.valueOf(Minecraft.getInstance().options.mipmapLevels().get()));
 		define(standardDefines, "IRIS_VERSION", getFormattedIrisVersion());
 		define(standardDefines, "MC_GL_VERSION", getGlVersion(GL20C.GL_VERSION));
 		define(standardDefines, "MC_GLSL_VERSION", getGlVersion(GL20C.GL_SHADING_LANGUAGE_VERSION));

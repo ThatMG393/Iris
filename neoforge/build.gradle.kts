@@ -126,7 +126,7 @@ dependencies {
     runtimeOnly("org.sinytra.forgified-fabric-api:fabric-rendering-data-attachment-v1:0.3.48+73761d2e19")
     runtimeOnly("org.sinytra.forgified-fabric-api:fabric-block-view-api-v2:1.0.10+9afaaf8c19")
 
-    implementation("maven.modrinth", "sodium", "mc1.21.3-0.6.0-beta.5-neoforge")
+    implementation("maven.modrinth", "sodium", "mc1.21.3-0.6.0-neoforge")
     includeAdditional("io.github.douira:glsl-transformer:2.0.1")
     includeAdditional("org.anarres:jcpp:1.4.14")
     includeAdditional("org.antlr:antlr4-runtime:4.13.1")

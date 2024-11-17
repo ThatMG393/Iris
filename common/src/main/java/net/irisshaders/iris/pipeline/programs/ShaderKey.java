@@ -2,6 +2,7 @@ package net.irisshaders.iris.pipeline.programs;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.irisshaders.iris.gl.blending.AlphaTest;
 import net.irisshaders.iris.gl.blending.AlphaTests;
 import net.irisshaders.iris.gl.state.FogMode;
@@ -9,6 +10,7 @@ import net.irisshaders.iris.shaderpack.loading.ProgramId;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 
 import java.util.Locale;
+import java.util.Set;
 
 public enum ShaderKey {
 	// if you auto-format this and destroy all the manual indentation, I'll steal your kneecaps
@@ -18,6 +20,7 @@ public enum ShaderKey {
 	BASIC_COLOR(ProgramId.Basic, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_COLOR, FogMode.OFF, LightingModel.LIGHTMAP),
 	TEXTURED(ProgramId.Textured, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_TEX, FogMode.OFF, LightingModel.LIGHTMAP),
 	TEXTURED_COLOR(ProgramId.Textured, AlphaTests.ONE_TENTH_ALPHA, DefaultVertexFormat.POSITION_TEX_COLOR, FogMode.OFF, LightingModel.LIGHTMAP),
+	SPS(ProgramId.SpiderEyes, AlphaTests.OFF, DefaultVertexFormat.POSITION_TEX_COLOR, FogMode.PER_FRAGMENT, LightingModel.FULLBRIGHT),
 	SKY_BASIC(ProgramId.SkyBasic, AlphaTests.OFF, DefaultVertexFormat.POSITION, FogMode.PER_VERTEX, LightingModel.LIGHTMAP),
 	SKY_BASIC_COLOR(ProgramId.SkyBasic, AlphaTests.NON_ZERO_ALPHA, DefaultVertexFormat.POSITION_COLOR, FogMode.OFF, LightingModel.LIGHTMAP),
 	SKY_TEXTURED(ProgramId.SkyTextured, AlphaTests.OFF, DefaultVertexFormat.POSITION_TEX, FogMode.OFF, LightingModel.LIGHTMAP),
@@ -126,7 +129,13 @@ public enum ShaderKey {
 	}
 
 	public boolean isShadow() {
-		return this.getProgram() == ProgramId.Shadow || this.getProgram() == ProgramId.ShadowCutout || this.getProgram() == ProgramId.ShadowWater || this.getProgram() == ProgramId.ShadowSolid || this.getProgram() == ProgramId.ShadowEntities || this.getProgram() == ProgramId.ShadowBlock;
+		return this.getProgram() == ProgramId.Shadow
+			|| this.getProgram() == ProgramId.ShadowCutout
+			|| this.getProgram() == ProgramId.ShadowWater
+			|| this.getProgram() == ProgramId.ShadowSolid
+			|| this.getProgram() == ProgramId.ShadowEntities
+			|| this.getProgram() == ProgramId.ShadowLightning
+			|| this.getProgram() == ProgramId.ShadowBlock;
 	}
 
 	public boolean hasDiffuseLighting() {

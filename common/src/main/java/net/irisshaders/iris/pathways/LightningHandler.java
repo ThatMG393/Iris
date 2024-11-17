@@ -47,6 +47,14 @@ public class LightningHandler extends RenderType {
 			.createCompositeState(true)
 	);
 
+	public static final Function<ResourceLocation, RenderType> SPS = Util.memoize(r -> create("sps", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 1_536, true, false,
+		RenderType.CompositeState.builder()
+			.setShaderState(new ShaderStateShard(ShaderAccess::getSPSShader))
+			.setTextureState(new RenderStateShard.TextureStateShard(r, false, false))
+			.setTransparencyState(RenderStateShard.LIGHTNING_TRANSPARENCY)
+			.createCompositeState(true)
+	));
+
 	public LightningHandler(String pRenderType0, VertexFormat pVertexFormat1, VertexFormat.Mode pVertexFormat$Mode2, int pInt3, boolean pBoolean4, boolean pBoolean5, Runnable pRunnable6, Runnable pRunnable7) {
 		super(pRenderType0, pVertexFormat1, pVertexFormat$Mode2, pInt3, pBoolean4, pBoolean5, pRunnable6, pRunnable7);
 	}
