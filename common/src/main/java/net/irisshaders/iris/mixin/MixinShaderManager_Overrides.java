@@ -26,8 +26,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static net.irisshaders.iris.pipeline.programs.ShaderOverrides.isBlockEntities;
 
@@ -185,6 +187,8 @@ public abstract class MixinShaderManager_Overrides {
 		}
 	}
 
+	private Set<ShaderProgram> missingShaders = new HashSet<>();
+
 	@Inject(method = "getProgram", at = @At(value = "HEAD"), cancellable = true)
 	private void redirectIrisProgram(ShaderProgram shaderProgram, CallbackInfoReturnable<CompiledShaderProgram> cir) {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
@@ -204,8 +208,8 @@ public abstract class MixinShaderManager_Overrides {
 
 			if (program != null) {
 				cir.setReturnValue(program);
-			} else if (IrisPlatformHelpers.getInstance().isDevelopmentEnvironment()) {
-				Iris.logger.error("missing program " + shaderProgram.configId(), new Throwable());
+			} else if (missingShaders.add(shaderProgram)) {
+				Iris.logger.error("Missing program " + shaderProgram.configId() + " in override list. This is not a critical problem, but it could lead to weird rendering.", new Throwable());
 			}
 		} else {
 			if (shaderProgram == ShaderAccess.MEKANISM_FLAME) {
