@@ -51,7 +51,7 @@ public class MixinLevelRenderer {
 	private Groupable groupable;
 
 	@Inject(method = "renderLevel", at = @At("HEAD"))
-	private void batchedentityrendering$beginLevelRender(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci) {
+	private void batchedentityrendering$beginLevelRender(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci) {
 		if (renderBuffers instanceof DrawCallTrackingRenderBuffers) {
 			((DrawCallTrackingRenderBuffers) renderBuffers).resetDrawCounts();
 		}

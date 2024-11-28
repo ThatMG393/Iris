@@ -109,8 +109,8 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 
 		int imageWidth = nativeImage.getWidth();
 		int imageHeight = nativeImage.getHeight();
-		AnimationMetadataSection metadataSection = animationMetadata.getSection(AnimationMetadataSection.SERIALIZER).orElse(AnimationMetadataSection.EMPTY);
-		FrameSize frameSize = metadataSection.calculateFrameSize(imageWidth, imageHeight);
+		AnimationMetadataSection metadataSection = animationMetadata.getSection(AnimationMetadataSection.TYPE).orElse(null);
+		FrameSize frameSize = metadataSection != null ? metadataSection.calculateFrameSize(imageWidth, imageHeight) : new FrameSize(imageWidth, imageHeight);
 		int frameWidth = frameSize.width();
 		int frameHeight = frameSize.height();
 		if (!Mth.isMultipleOf(imageWidth, frameWidth) || !Mth.isMultipleOf(imageHeight, frameHeight)) {
@@ -140,15 +140,15 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 				frameWidth = targetFrameWidth;
 				frameHeight = targetFrameHeight;
 
-				if (metadataSection != AnimationMetadataSection.EMPTY) {
-					AnimationMetadataSectionAccessor animationAccessor = (AnimationMetadataSectionAccessor) metadataSection;
-					int internalFrameWidth = animationAccessor.getFrameWidth();
-					int internalFrameHeight = animationAccessor.getFrameHeight();
+				if (metadataSection != null) {
+					AnimationMetadataSectionAccessor animationAccessor = (AnimationMetadataSectionAccessor) (Object) metadataSection;
+					int internalFrameWidth = animationAccessor.getFrameWidth().orElse(-1);
+					int internalFrameHeight = animationAccessor.getFrameHeight().orElse(-1);
 					if (internalFrameWidth != -1) {
-						animationAccessor.setFrameWidth(frameWidth);
+						animationAccessor.setFrameWidth(Optional.of(frameWidth));
 					}
 					if (internalFrameHeight != -1) {
-						animationAccessor.setFrameHeight(frameHeight);
+						animationAccessor.setFrameHeight(Optional.of(frameHeight));
 					}
 				}
 			} catch (Exception e) {

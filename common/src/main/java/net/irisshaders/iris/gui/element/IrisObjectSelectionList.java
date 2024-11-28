@@ -10,7 +10,7 @@ public class IrisObjectSelectionList<E extends AbstractSelectionList.Entry<E>> e
 	}
 
 	@Override
-	protected int getScrollbarPosition() {
+	protected int scrollBarX() {
 		// Position the scrollbar at the rightmost edge of the screen.
 		// By default, the scrollbar is positioned moderately offset from the center.
 		return width - 6;

@@ -83,7 +83,7 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, Math.max(screen.listTransition.getAsFloat(), 0.01f));
 		pAbstractSelectionList0.blit(RenderType::guiTextured,
 			MENU_LIST_BACKGROUND,
-			this.getX(), this.getY(), (float)this.getRight(), (float)(this.getBottom() + (int)this.getScrollAmount()), this.getWidth(), this.getHeight(), 32, 32
+			this.getX(), this.getY(), (float)this.getRight(), (float)(this.getBottom() + (int)this.scrollAmount()), this.getWidth(), this.getHeight(), 32, 32
 		);
 		if (transition < 0.99f) pAbstractSelectionList0.flush();
 
@@ -103,11 +103,6 @@ public class ShaderPackOptionList extends IrisContainerObjectSelectionList<Shade
 		if (transition < 0.99f) pAbstractSelectionList0.flush();
 		RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 		RenderSystem.disableBlend();
-	}
-
-	@Override
-	protected boolean isValidMouseClick(int i) {
-		return i == GLFW.GLFW_MOUSE_BUTTON_1 || i == GLFW.GLFW_MOUSE_BUTTON_2;
 	}
 
 	public void addHeader(Component text, boolean backButton) {

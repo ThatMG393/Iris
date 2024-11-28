@@ -44,7 +44,7 @@ public class NativeImageBackedCustomTexture extends DynamicTexture implements Te
 		NativeImage image = Objects.requireNonNull(getPixels());
 
 		bind();
-		image.upload(0, 0, 0, 0, 0, image.getWidth(), image.getHeight(), false, false, false, false);
+		image.upload(0, 0, 0, false);
 	}
 
 	@Override

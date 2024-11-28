@@ -145,7 +145,7 @@ public class CustomTextureManager {
 				//     now.
 				return new TextureWrapper(() -> {
 					AbstractTexture texture = textureManager.getTexture(textureLocation);
-					return texture != null ? texture.getId() : MissingTextureAtlasSprite.getTexture().getId();
+					return texture != null ? texture.getId() : textureManager.getTexture(MissingTextureAtlasSprite.getLocation()).getId();
 				}, TextureType.TEXTURE_2D);
 			} else {
 				location = location.substring(0, extensionIndex - pbrType.getSuffix().length()) + location.substring(extensionIndex);
@@ -173,7 +173,7 @@ public class CustomTextureManager {
 						return pbrTexture.getId();
 					}
 
-					return MissingTextureAtlasSprite.getTexture().getId();
+					return textureManager.getTexture(MissingTextureAtlasSprite.getLocation()).getId();
 				}, TextureType.TEXTURE_2D);
 			}
 		}

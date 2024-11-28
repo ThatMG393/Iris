@@ -51,7 +51,7 @@ public class PBRAtlasTexture extends AbstractTexture implements PBRDumpable {
 
 		int ticks = 0;
 		for (int f = 0; f < sourceAccessor.getFrame(); f++) {
-			ticks += ((SpriteContentsFrameInfoAccessor) sourceFrames.get(f)).getTime();
+			ticks += ((SpriteContentsFrameInfoAccessor) (Object) sourceFrames.get(f)).getTime();
 		}
 
 		SpriteContentsTickerAccessor targetAccessor = (SpriteContentsTickerAccessor) target;
@@ -60,13 +60,13 @@ public class PBRAtlasTexture extends AbstractTexture implements PBRDumpable {
 		int cycleTime = 0;
 		int frameCount = targetFrames.size();
 		for (FrameInfo frame : targetFrames) {
-			cycleTime += ((SpriteContentsFrameInfoAccessor) frame).getTime();
+			cycleTime += ((SpriteContentsFrameInfoAccessor) (Object) frame).getTime();
 		}
 		ticks %= cycleTime;
 
 		int targetFrame = 0;
 		while (true) {
-			int time = ((SpriteContentsFrameInfoAccessor) targetFrames.get(targetFrame)).getTime();
+			int time = ((SpriteContentsFrameInfoAccessor) (Object) targetFrames.get(targetFrame)).getTime();
 			if (ticks >= time) {
 				targetFrame++;
 				ticks -= time;
@@ -168,7 +168,7 @@ public class PBRAtlasTexture extends AbstractTexture implements PBRDumpable {
 				SpriteContentsTickerAccessor tickerAccessor = (SpriteContentsTickerAccessor) targetTicker;
 				SpriteContentsAnimatedTextureAccessor infoAccessor = (SpriteContentsAnimatedTextureAccessor) tickerAccessor.getAnimationInfo();
 
-				infoAccessor.invokeUploadFrame(sprite.getX(), sprite.getY(), ((SpriteContentsFrameInfoAccessor) infoAccessor.getFrames().get(tickerAccessor.getFrame())).getIndex());
+				infoAccessor.invokeUploadFrame(sprite.getX(), sprite.getY(), ((SpriteContentsFrameInfoAccessor) (Object) infoAccessor.getFrames().get(tickerAccessor.getFrame())).getIndex());
 				return;
 			}
 		}
@@ -197,10 +197,6 @@ public class PBRAtlasTexture extends AbstractTexture implements PBRDumpable {
 			}
 		}
 		clear();
-	}
-
-	@Override
-	public void load(ResourceManager manager) {
 	}
 
 	@Override

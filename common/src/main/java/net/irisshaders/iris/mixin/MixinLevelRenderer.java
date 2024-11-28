@@ -90,7 +90,7 @@ public class MixinLevelRenderer {
 	// This is important or else very odd issues will happen with shaders that have a final pass that doesn't write to
 	// all pixels.
 	@Inject(method = "renderLevel", at = @At("HEAD"))
-	private void iris$setupPipeline(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f modelView, Matrix4f projection, CallbackInfo ci) {
+	private void iris$setupPipeline(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, Matrix4f modelView, Matrix4f projection, CallbackInfo ci) {
 		DHCompat.checkFrame();
 
 		IrisTimeUniforms.updateTime();
@@ -121,7 +121,7 @@ public class MixinLevelRenderer {
 	// This is important or else very odd issues will happen with shaders that have a final pass that doesn't write to
 	// all pixels.
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/framegraph/FramePass;executes(Ljava/lang/Runnable;)V", ordinal = 0, shift = At.Shift.AFTER))
-	private void iris$beginLevelRender(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci, @Local FrameGraphBuilder frameGraphBuilder, @Local(ordinal = 1) FogParameters fogParameters, @Local(ordinal = 0) FramePass clearPass) {
+	private void iris$beginLevelRender(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci, @Local FrameGraphBuilder frameGraphBuilder, @Local(ordinal = 1) FogParameters fogParameters, @Local(ordinal = 0) FramePass clearPass) {
 		FramePass framePass = frameGraphBuilder.addPass("iris_setup");
 		this.targets.main = framePass.readsAndWrites(this.targets.main);
 		framePass.requires(clearPass);
@@ -137,7 +137,7 @@ public class MixinLevelRenderer {
 	// Inject a bit early so that we can end our rendering before mods like VoxelMap (which inject at RETURN)
 	// render their waypoint beams.
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderFog(Lnet/minecraft/client/renderer/FogParameters;)V"))
-	private void iris$endLevelRender(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f modelMatrix, Matrix4f matrix4f2, CallbackInfo ci) {
+	private void iris$endLevelRender(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, Matrix4f modelMatrix, Matrix4f matrix4f2, CallbackInfo ci) {
 		HandRenderer.INSTANCE.renderTranslucent(modelMatrix, deltaTracker.getGameTimeDeltaPartialTick(true), camera, gameRenderer, pipeline);
 		Profiler.get().popPush("iris_final");
 		pipeline.finalizeLevelRendering();
@@ -161,7 +161,7 @@ public class MixinLevelRenderer {
 
 	// Do this before sky rendering so it's ready before the sky render starts.
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;collectVisibleEntities(Lnet/minecraft/client/Camera;Lnet/minecraft/client/renderer/culling/Frustum;Ljava/util/List;)Z", shift = At.Shift.AFTER))
-	private void iris$renderTerrainShadows(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci) {
+	private void iris$renderTerrainShadows(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci) {
 		pipeline.renderShadows((LevelRendererAccessor) this, camera);
 
 	}

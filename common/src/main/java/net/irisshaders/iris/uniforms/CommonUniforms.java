@@ -223,7 +223,7 @@ public final class CommonUniforms {
 		int skyColor = client.level.getSkyColor(client.cameraEntity.position(),
 			CapturedRenderingState.INSTANCE.getTickDelta());
 
-		return new Vector3d(ARGB.from8BitChannel(ARGB.red(skyColor)), ARGB.from8BitChannel(ARGB.green(skyColor)), ARGB.from8BitChannel(ARGB.blue(skyColor)));
+		return new Vector3d(ARGB.redFloat(skyColor), ARGB.greenFloat(skyColor), ARGB.blueFloat(skyColor));
 	}
 
 	static float getBlindness() {

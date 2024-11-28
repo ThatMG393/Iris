@@ -34,7 +34,7 @@ public class NativeImageBackedNoiseTexture extends DynamicTexture implements Tex
 		NativeImage image = Objects.requireNonNull(getPixels());
 
 		bind();
-		image.upload(0, 0, 0, 0, 0, image.getWidth(), image.getHeight(), true, false, false, false);
+		image.upload(0, 0, 0, false);
 	}
 
 	@Override

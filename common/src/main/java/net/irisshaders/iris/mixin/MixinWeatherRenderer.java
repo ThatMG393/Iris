@@ -7,6 +7,7 @@ import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
 import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.world.level.Level;
@@ -17,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 @Mixin(WeatherEffectRenderer.class)
 public class MixinWeatherRenderer {
-	@ModifyArg(method = "render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/world/phys/Vec3;IFLjava/util/List;Ljava/util/List;)V", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;depthMask(Z)V", ordinal = 0, remap = false))
+	@ModifyArg(method = "render(Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/world/phys/Vec3;IFLjava/util/List;Ljava/util/List;)V", index = 1, at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/RenderType;weather(Lnet/minecraft/resources/ResourceLocation;Z)Lnet/minecraft/client/renderer/RenderType;", remap = false))
 	private boolean iris$writeRainAndSnowToDepthBuffer(boolean depthMaskEnabled) {
 		if (Iris.getPipelineManager().getPipeline().map(WorldRenderingPipeline::shouldWriteRainAndSnowToDepthBuffer).orElse(false)) {
 			return true;
@@ -26,10 +27,10 @@ public class MixinWeatherRenderer {
 		return depthMaskEnabled;
 	}
 
-	@WrapMethod(method = "render(Lnet/minecraft/world/level/Level;Lnet/minecraft/client/renderer/LightTexture;IFLnet/minecraft/world/phys/Vec3;)V")
-	private void iris$disableWeather(Level level, LightTexture lightTexture, int i, float f, Vec3 vec3, Operation<Void> original) {
+	@WrapMethod(method = "render(Lnet/minecraft/world/level/Level;Lnet/minecraft/client/renderer/MultiBufferSource;IFLnet/minecraft/world/phys/Vec3;)V")
+	private void iris$disableWeather(Level level, MultiBufferSource multiBufferSource, int i, float f, Vec3 vec3, Operation<Void> original) {
 		if (Iris.getPipelineManager().getPipeline().map(WorldRenderingPipeline::shouldRenderWeather).orElse(true)) {
-			original.call(level, lightTexture, i, f, vec3);
+			original.call(level, multiBufferSource, i, f, vec3);
 		}
 	}
 
