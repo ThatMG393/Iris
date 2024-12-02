@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import net.irisshaders.iris.features.FeatureFlags;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.framebuffer.GlFramebuffer;
+import net.irisshaders.iris.gl.sampler.GlSampler;
 import net.irisshaders.iris.gl.texture.DepthBufferFormat;
 import net.irisshaders.iris.gl.texture.DepthCopyStrategy;
 import net.irisshaders.iris.gl.texture.InternalTextureFormat;
@@ -30,6 +31,7 @@ public class ShadowRenderTargets {
 	private final List<GlFramebuffer> ownedFramebuffers;
 	private final int resolution;
 	private final boolean[] hardwareFiltered;
+	private final boolean[] mipped;
 	private final boolean[] linearFiltered;
 	private final InternalTextureFormat[] formats;
 	private final IntList buffersToBeCleared;
@@ -44,6 +46,7 @@ public class ShadowRenderTargets {
 		formats = new InternalTextureFormat[size];
 		flipped = new boolean[size];
 		hardwareFiltered = new boolean[size];
+		mipped = new boolean[size];
 		linearFiltered = new boolean[size];
 		buffersToBeCleared = new IntArrayList();
 
@@ -55,6 +58,7 @@ public class ShadowRenderTargets {
 
 		for (int i = 0; i < shadowDirectives.getDepthSamplingSettings().size(); i++) {
 			this.hardwareFiltered[i] = shadowDirectives.getDepthSamplingSettings().get(i).getHardwareFiltering();
+			this.mipped[i] = shadowDirectives.getDepthSamplingSettings().get(i).getMipmap();
 			this.linearFiltered[i] = !shadowDirectives.getDepthSamplingSettings().get(i).getNearest();
 		}
 
@@ -317,10 +321,6 @@ public class ShadowRenderTargets {
 		return hardwareFiltered[i];
 	}
 
-	public boolean isLinearFiltered(int i) {
-		return linearFiltered[i];
-	}
-
 	public int getNumColorTextures() {
 		return targets.length;
 	}
@@ -344,4 +344,35 @@ public class ShadowRenderTargets {
 		return buffersToBeCleared;
 	}
 
+	public GlSampler getSamplerFor(int i) {
+		if (hardwareFiltered[i]) {
+			if (linearFiltered[i]) {
+				if (mipped[i]) {
+					return GlSampler.MIPPED_LINEAR_HW;
+				} else {
+					return GlSampler.LINEAR_HW;
+				}
+			} else {
+				if (mipped[i]) {
+					return GlSampler.MIPPED_NEAREST_HW;
+				} else {
+					return GlSampler.NEAREST_HW;
+				}
+			}
+		} else {
+			if (linearFiltered[i]) {
+				if (mipped[i]) {
+					return GlSampler.MIPPED_LINEAR;
+				} else {
+					return GlSampler.LINEAR;
+				}
+			} else {
+				if (mipped[i]) {
+					return GlSampler.MIPPED_NEAREST;
+				} else {
+					return GlSampler.NEAREST;
+				}
+			}
+		}
+	}
 }

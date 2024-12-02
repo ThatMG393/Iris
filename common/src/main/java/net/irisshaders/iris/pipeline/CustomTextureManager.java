@@ -13,6 +13,7 @@ import net.irisshaders.iris.mixin.GlStateManagerAccessor;
 import net.irisshaders.iris.mixin.LightTextureAccessor;
 import net.irisshaders.iris.pbr.format.TextureFormat;
 import net.irisshaders.iris.pbr.format.TextureFormatLoader;
+import net.irisshaders.iris.pbr.texture.PBRAtlasTexture;
 import net.irisshaders.iris.pbr.texture.PBRTextureHolder;
 import net.irisshaders.iris.pbr.texture.PBRTextureManager;
 import net.irisshaders.iris.pbr.texture.PBRType;
@@ -25,6 +26,7 @@ import net.minecraft.ResourceLocationException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.io.FilenameUtils;
@@ -145,6 +147,9 @@ public class CustomTextureManager {
 				//     now.
 				return new TextureWrapper(() -> {
 					AbstractTexture texture = textureManager.getTexture(textureLocation);
+					if (texture instanceof TextureAtlas || texture instanceof PBRAtlasTexture) {
+						texture.setFilter(false, Minecraft.getInstance().options.mipmapLevels().get() > 0);
+					}
 					return texture != null ? texture.getId() : MissingTextureAtlasSprite.getTexture().getId();
 				}, TextureType.TEXTURE_2D);
 			} else {
@@ -155,6 +160,9 @@ public class CustomTextureManager {
 					AbstractTexture texture = textureManager.getTexture(textureLocation);
 
 					if (texture != null) {
+						if (texture instanceof TextureAtlas || texture instanceof PBRAtlasTexture) {
+							texture.setFilter(false, Minecraft.getInstance().options.mipmapLevels().get() > 0);
+						}
 						int id = texture.getId();
 						PBRTextureHolder pbrHolder = PBRTextureManager.INSTANCE.getOrLoadHolder(id);
 						AbstractTexture pbrTexture = switch (pbrType) {
