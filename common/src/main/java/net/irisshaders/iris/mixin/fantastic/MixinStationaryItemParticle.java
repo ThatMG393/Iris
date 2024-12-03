@@ -1,5 +1,6 @@
 package net.irisshaders.iris.mixin.fantastic;
 
+import net.irisshaders.iris.fantastic.IrisParticleRenderTypes;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.BlockMarker;
 import net.minecraft.client.particle.ParticleRenderType;
@@ -30,7 +31,7 @@ public class MixinStationaryItemParticle {
 	@Inject(method = "getRenderType", at = @At("HEAD"), cancellable = true)
 	private void iris$overrideParticleRenderType(CallbackInfoReturnable<ParticleRenderType> cir) {
 		if (isOpaque) {
-			cir.setReturnValue(ParticleRenderType.TERRAIN_SHEET);
+			cir.setReturnValue(IrisParticleRenderTypes.TERRAIN_OPAQUE);
 		}
 	}
 }

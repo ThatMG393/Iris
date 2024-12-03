@@ -3,6 +3,7 @@ package net.irisshaders.iris.mixin.fabric;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.irisshaders.iris.api.v0.IrisApi;
+import net.irisshaders.iris.fantastic.IrisParticleRenderTypes;
 import net.irisshaders.iris.fantastic.ParticleRenderingPhase;
 import net.irisshaders.iris.fantastic.PhasedParticleEngine;
 import net.irisshaders.iris.pipeline.programs.ShaderAccess;
@@ -14,6 +15,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -54,6 +56,7 @@ import java.util.function.Supplier;
 @Mixin(ParticleEngine.class)
 public class MixinParticleEngine implements PhasedParticleEngine {
 	private static final List<ParticleRenderType> OPAQUE_PARTICLE_RENDER_TYPES;
+	@Mutable
 	@Shadow
 	@Final
 	private static List<ParticleRenderType> RENDER_ORDER;
@@ -61,8 +64,11 @@ public class MixinParticleEngine implements PhasedParticleEngine {
 	static {
 		OPAQUE_PARTICLE_RENDER_TYPES = ImmutableList.of(
 			ParticleRenderType.PARTICLE_SHEET_OPAQUE,
+			IrisParticleRenderTypes.TERRAIN_OPAQUE,
 			ParticleRenderType.NO_RENDER
 		);
+
+		RENDER_ORDER = List.of(ParticleRenderType.TERRAIN_SHEET, IrisParticleRenderTypes.TERRAIN_OPAQUE, ParticleRenderType.PARTICLE_SHEET_OPAQUE, ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT);
 	}
 
 	@Unique
