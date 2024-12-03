@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.Function;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import net.caffeinemc.mods.sodium.client.render.immediate.CloudRenderer;
 import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.compat.sodium.mixin.CloudRendererAccessor;
 import net.irisshaders.iris.pathways.HandRenderer;
 import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.pipeline.WorldRenderingPhase;
@@ -91,7 +92,7 @@ public abstract class MixinShaderManager_Overrides {
 			coreShaderMap.put(CoreShaders.RENDERTYPE_WATER_MASK, p -> ShaderKey.ENTITIES_SOLID);
 			coreShaderMap.put(CoreShaders.RENDERTYPE_CLOUDS, p -> ShaderKey.CLOUDS);
 			coreShaderMap.put(CoreShaders.RENDERTYPE_CRUMBLING, p -> ShaderKey.CRUMBLING);
-			coreShaderMap.put(CloudRenderer.CLOUDS, p -> ShaderKey.CLOUDS_SODIUM);
+			coreShaderMap.put(CloudRendererAccessor.getCLOUDS_SHADER(), p -> ShaderKey.CLOUDS_SODIUM);
 			coreShaderMap.put(CoreShaders.RENDERTYPE_TRANSLUCENT_MOVING_BLOCK, p -> ShaderKey.MOVING_BLOCK);
 
 			coreShaderMapShadow.put(CoreShaders.POSITION, p -> ShaderKey.SHADOW_BASIC);
@@ -140,7 +141,7 @@ public abstract class MixinShaderManager_Overrides {
 			coreShaderMapShadow.put(CoreShaders.RENDERTYPE_WATER_MASK, p -> ShaderKey.SHADOW_ENTITIES_CUTOUT);
 			coreShaderMapShadow.put(CoreShaders.RENDERTYPE_CLOUDS, p -> ShaderKey.SHADOW_CLOUDS);
 			coreShaderMapShadow.put(CoreShaders.RENDERTYPE_CRUMBLING, p -> ShaderKey.SHADOW_BASIC);
-			coreShaderMapShadow.put(CloudRenderer.CLOUDS, p -> ShaderKey.SHADOW_CLOUDS);
+			coreShaderMapShadow.put(CloudRendererAccessor.getCLOUDS_SHADER(), p -> ShaderKey.SHADOW_CLOUDS);
 			coreShaderMapShadow.put(CoreShaders.RENDERTYPE_TRANSLUCENT_MOVING_BLOCK, p -> ShaderKey.SHADOW_TERRAIN_CUTOUT);
 
 		// Check that all shaders are accounted for
