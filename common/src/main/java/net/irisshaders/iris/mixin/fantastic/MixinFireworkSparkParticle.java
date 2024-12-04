@@ -1,5 +1,6 @@
 package net.irisshaders.iris.mixin.fantastic;
 
+import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.fantastic.IrisParticleRenderTypes;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleRenderType;
@@ -15,6 +16,6 @@ public class MixinFireworkSparkParticle extends SimpleAnimatedParticle {
 
 	@Override
 	public ParticleRenderType getRenderType() {
-		return IrisParticleRenderTypes.TERRAIN_OPAQUE;
+		return Iris.IS_FOOL ? ParticleRenderType.TERRAIN_SHEET : ParticleRenderType.PARTICLE_SHEET_OPAQUE;
 	}
 }

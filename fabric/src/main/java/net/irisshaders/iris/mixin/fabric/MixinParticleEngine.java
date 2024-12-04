@@ -11,7 +11,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.ParticleRenderType;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,7 +25,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
-import java.util.function.Supplier;
 
 /**
  * Extends the ParticleEngine class to allow multiple phases of particle rendering.
@@ -64,8 +62,7 @@ public class MixinParticleEngine implements PhasedParticleEngine {
 	static {
 		OPAQUE_PARTICLE_RENDER_TYPES = ImmutableList.of(
 			ParticleRenderType.PARTICLE_SHEET_OPAQUE,
-			IrisParticleRenderTypes.TERRAIN_OPAQUE,
-			ParticleRenderType.NO_RENDER
+			IrisParticleRenderTypes.TERRAIN_OPAQUE
 		);
 
 		RENDER_ORDER = List.of(ParticleRenderType.TERRAIN_SHEET, IrisParticleRenderTypes.TERRAIN_OPAQUE, ParticleRenderType.PARTICLE_SHEET_OPAQUE, ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT);
