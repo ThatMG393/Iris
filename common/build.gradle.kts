@@ -59,7 +59,7 @@ dependencies {
 
     modCompileOnly("net.fabricmc.fabric-api:fabric-renderer-api-v1:3.2.9+1172e897d7")
 
-    modImplementation(files(rootDir.resolve("custom_sodium").resolve("sodium-fabric-0.6.0-snapshot+mc1.21.4-rc3-local.jar")))
+    modImplementation("maven.modrinth", "sodium", "mc1.21.4-0.6.2-fabric")
     modCompileOnly("org.antlr:antlr4-runtime:4.13.1")
     modCompileOnly("io.github.douira:glsl-transformer:2.0.1")
     modCompileOnly("org.anarres:jcpp:1.4.14")

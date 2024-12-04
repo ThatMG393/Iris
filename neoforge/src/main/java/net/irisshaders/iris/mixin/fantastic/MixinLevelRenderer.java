@@ -50,8 +50,8 @@ public abstract class MixinLevelRenderer {
 	@Shadow
 	public abstract Frustum getFrustum();
 
-	@WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V", ordinal = 1))
-	private void redirectSolidParticles(ParticleEngine instance, LightTexture lightTexture, Camera camera, float v, Frustum frustum, Predicate<ParticleRenderType> predicate, Operation<Void> original) {
+	@WrapOperation(method = "lambda$addMainPass$2", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V"))
+	private void redirectSolidParticles(ParticleEngine instance, Camera camera, float v, MultiBufferSource.BufferSource bufferSource, Frustum frustum, Predicate<ParticleRenderType> predicate, Operation<Void> original) {
 		ParticleRenderingSettings settings = getRenderingSettings();
 
 		Predicate<ParticleRenderType> newPredicate = predicate;
@@ -62,10 +62,10 @@ public abstract class MixinLevelRenderer {
 			return;
 		}
 
-		original.call(instance, lightTexture, camera, v, frustum, newPredicate);
+		original.call(instance, camera, v, bufferSource, frustum, newPredicate);
 	}
 
-	@WrapOperation(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V", ordinal = 2))
+	@WrapOperation(method = "lambda$addParticlesPass$3", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V"))
 	private void redirectTransParticles(ParticleEngine instance, LightTexture lightTexture, Camera camera, float v, Frustum frustum, Predicate<ParticleRenderType> predicate, Operation<Void> original) {
 		ParticleRenderingSettings settings = getRenderingSettings();
 

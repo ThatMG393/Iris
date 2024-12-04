@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SolidBucketItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -29,7 +29,7 @@ public class ItemStackStateLayerMixin {
 	@Inject(method = "render", at = @At("HEAD"))
 	private void onRender(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, int j, CallbackInfo ci, @Share("lastBState") LocalIntRef ref) {
 		ref.set(CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-		iris$setupId(((ItemContextState) parentState).getDisplayStack());
+		iris$setupId(((ItemContextState) parentState).getDisplayItem());
 	}
 
 	@Inject(method = "render", at = @At("TAIL"))
@@ -39,10 +39,10 @@ public class ItemStackStateLayerMixin {
 	}
 
 	@Unique
-	private void iris$setupId(ItemStack pItemRenderer0) {
+	private void iris$setupId(Item item) {
 		if (WorldRenderingSettings.INSTANCE.getItemIds() == null) return;
 
-		if (pItemRenderer0.getItem() instanceof BlockItem blockItem && !(pItemRenderer0.getItem() instanceof SolidBucketItem)) {
+		if (item instanceof BlockItem blockItem && !(item instanceof SolidBucketItem)) {
 			if (WorldRenderingSettings.INSTANCE.getBlockStateIds() == null) return;
 
 			CapturedRenderingState.INSTANCE.setCurrentBlockEntity(1);
@@ -50,7 +50,7 @@ public class ItemStackStateLayerMixin {
 			//System.out.println(WorldRenderingSettings.INSTANCE.getBlockStateIds().getInt(blockItem.getBlock().defaultBlockState()));
 			CapturedRenderingState.INSTANCE.setCurrentRenderedItem(WorldRenderingSettings.INSTANCE.getBlockStateIds().getOrDefault(blockItem.getBlock().defaultBlockState(), 0));
 		} else {
-			ResourceLocation location = BuiltInRegistries.ITEM.getKey(pItemRenderer0.getItem());
+			ResourceLocation location = BuiltInRegistries.ITEM.getKey(item);
 
 			CapturedRenderingState.INSTANCE.setCurrentRenderedItem(WorldRenderingSettings.INSTANCE.getItemIds().applyAsInt(new NamespacedId(location.getNamespace(), location.getPath())));
 		}
