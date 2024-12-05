@@ -11,6 +11,7 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -57,10 +58,10 @@ import java.util.function.Supplier;
  */
 @Mixin(ParticleEngine.class)
 public class MixinParticleEngine {
-	@Inject(method = "render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleRenderType;begin(Lcom/mojang/blaze3d/vertex/Tesselator;Lnet/minecraft/client/renderer/texture/TextureManager;)Lcom/mojang/blaze3d/vertex/BufferBuilder;"))
-	private void iris$changeParticleShader(LightTexture p_107339_, Camera p_107340_, float p_107341_, Frustum frustum, Predicate<ParticleRenderType> renderTypePredicate, CallbackInfo ci) {
-		if (!renderTypePredicate.test(ParticleRenderType.PARTICLE_SHEET_OPAQUE)) {
-			RenderSystem.setShader(ShaderAccess.getParticleTranslucentShader());
-		}
+	//@Inject(method = "renderParticleType(Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/particle/ParticleRenderType;Ljava/util/Queue;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleRenderType;begin(Lcom/mojang/blaze3d/vertex/Tesselator;Lnet/minecraft/client/renderer/texture/TextureManager;)Lcom/mojang/blaze3d/vertex/BufferBuilder;"))
+	private static void iris$changeParticleShader(Camera p_382847_, float p_383032_, MultiBufferSource.BufferSource p_383105_, ParticleRenderType p_383179_, Queue<Particle> p_383046_, CallbackInfo ci) {
+		//if (!renderTypePredicate.test(ParticleRenderType.PARTICLE_SHEET_OPAQUE)) {
+		//	RenderSystem.setShader(ShaderAccess.getParticleTranslucentShader());
+		//}
 	}
 }

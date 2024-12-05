@@ -71,13 +71,6 @@ public class MixinParticleEngine implements PhasedParticleEngine {
 	@Unique
 	private static ParticleRenderingPhase phase = ParticleRenderingPhase.EVERYTHING;
 
-	@Inject(method = "renderParticleType", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;getBuffer(Lnet/minecraft/client/renderer/RenderType;)Lcom/mojang/blaze3d/vertex/VertexConsumer;", shift = At.Shift.AFTER))
-	private static void iris$changeParticleShader(Camera camera, float f, MultiBufferSource.BufferSource bufferSource, ParticleRenderType particleRenderType, Queue<Particle> queue, CallbackInfo ci) {
-		if (IrisApi.getInstance().isShaderPackInUse() && phase == ParticleRenderingPhase.TRANSLUCENT) {
-			RenderSystem.setShader(ShaderAccess.getParticleTranslucentShader());
-		}
-	}
-
 	@Redirect(method = "render", at = @At(value = "FIELD", target = "Lnet/minecraft/client/particle/ParticleEngine;RENDER_ORDER:Ljava/util/List;"))
 	private List<ParticleRenderType> iris$selectParticlesToRender() {
 		if (phase == ParticleRenderingPhase.TRANSLUCENT) {

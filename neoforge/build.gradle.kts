@@ -18,6 +18,14 @@ sourceSets {
 
 repositories {
     mavenLocal()
+    maven("https://maven.pkg.github.com/ims212/ForgifiedFabricAPI") {
+        credentials {
+            username = "IMS212"
+            // Read only token
+            password = "ghp_" + "DEuGv0Z56vnSOYKLCXdsS9svK4nb9K39C1Hn"
+        }
+    }
+
     maven("https://maven.su5ed.dev/releases")
     maven("https://maven.neoforged.net/releases/")
     maven("https://prmaven.neoforged.net/NeoForge/pr1590") {
@@ -122,7 +130,7 @@ dependencies {
     compileOnly(project.project(":common").sourceSets.getByName("headers").output)
     compileOnly(project.project(":common").sourceSets.getByName("api").output)
     runtimeOnly("org.sinytra.forgified-fabric-api:fabric-api-base:0.4.42+d1308ded19")
-    runtimeOnly("net.fabricmc:fabric_renderer_api_v1:3.3.0+1.21.2-pre1")
+    runtimeOnly("org.sinytra.forgified-fabric-api:fabric-renderer-api-v1:5.0.0+babc52e504")
     runtimeOnly("org.sinytra.forgified-fabric-api:fabric-rendering-data-attachment-v1:0.3.48+73761d2e19")
     runtimeOnly("org.sinytra.forgified-fabric-api:fabric-block-view-api-v2:1.0.10+9afaaf8c19")
 

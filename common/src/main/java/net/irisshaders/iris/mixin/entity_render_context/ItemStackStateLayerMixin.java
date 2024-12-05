@@ -23,8 +23,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ItemStackRenderState.LayerRenderState.class)
 public class ItemStackStateLayerMixin {
-	@Shadow(aliases = "field_55345")
+	@Unique
 	private ItemStackRenderState parentState;
+
+	@Inject(method = "<init>", at = @At("TAIL"))
+	private void iris$catchParent(ItemStackRenderState itemStackRenderState, CallbackInfo ci) {
+		this.parentState = itemStackRenderState;
+	}
 
 	@Inject(method = "render", at = @At("HEAD"))
 	private void onRender(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, int j, CallbackInfo ci, @Share("lastBState") LocalIntRef ref) {

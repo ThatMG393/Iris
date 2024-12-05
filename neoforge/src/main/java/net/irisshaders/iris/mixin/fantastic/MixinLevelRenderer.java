@@ -40,16 +40,6 @@ import java.util.function.Predicate;
  */
 @Mixin(LevelRenderer.class)
 public abstract class MixinLevelRenderer {
-	@Shadow
-	@Final
-	private Minecraft minecraft;
-
-	@Shadow
-	private RenderBuffers renderBuffers;
-
-	@Shadow
-	public abstract Frustum getFrustum();
-
 	@WrapOperation(method = "lambda$addMainPass$2", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V"))
 	private void redirectSolidParticles(ParticleEngine instance, Camera camera, float v, MultiBufferSource.BufferSource bufferSource, Frustum frustum, Predicate<ParticleRenderType> predicate, Operation<Void> original) {
 		ParticleRenderingSettings settings = getRenderingSettings();
@@ -65,8 +55,8 @@ public abstract class MixinLevelRenderer {
 		original.call(instance, camera, v, bufferSource, frustum, newPredicate);
 	}
 
-	@WrapOperation(method = "lambda$addParticlesPass$3", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V"))
-	private void redirectTransParticles(ParticleEngine instance, LightTexture lightTexture, Camera camera, float v, Frustum frustum, Predicate<ParticleRenderType> predicate, Operation<Void> original) {
+	@WrapOperation(method = "lambda$addParticlesPass$5", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/ParticleEngine;render(Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V"))
+	private void redirectTransParticles(ParticleEngine instance, Camera camera, float v, MultiBufferSource.BufferSource bufferSource, Frustum frustum, Predicate<ParticleRenderType> predicate, Operation<Void> original) {
 		ParticleRenderingSettings settings = getRenderingSettings();
 
 		Predicate<ParticleRenderType> newPredicate = predicate;
@@ -77,7 +67,7 @@ public abstract class MixinLevelRenderer {
 			newPredicate = (t) -> true;
 		}
 
-		original.call(instance, lightTexture, camera, v, frustum, newPredicate);
+		original.call(instance, camera, v, bufferSource, frustum, newPredicate);
 	}
 
 	private ParticleRenderingSettings getRenderingSettings() {

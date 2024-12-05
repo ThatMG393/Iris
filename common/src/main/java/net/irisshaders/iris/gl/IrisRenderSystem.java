@@ -472,8 +472,8 @@ public class IrisRenderSystem {
 	public static void copyImageSubData(int sourceTexture, int target, int mip, int srcX, int srcY, int srcZ, int destTexture, int dstTarget, int dstMip, int dstX, int dstY, int dstZ, int width, int height, int depth) {
 		GL46C.glCopyImageSubData(sourceTexture, target, mip, srcX, srcY, srcZ, destTexture, dstTarget, dstMip, dstX, dstY, dstZ, width, height, depth);
   }
-  
-  
+
+
   private static boolean cullingState;
 
 	public static void backupAndDisableCullingState(boolean b) {
@@ -531,18 +531,22 @@ public class IrisRenderSystem {
 
 		@Override
 		public void texParameteri(int texture, int target, int pname, int param) {
-			ARBDirectStateAccess.glTextureParameteri(texture, pname, param);
+			bindTextureForSetup(target, texture);
+			GL32C.glTexParameteri(target, pname, param);
 		}
 
 		@Override
 		public void texParameterf(int texture, int target, int pname, float param) {
-			ARBDirectStateAccess.glTextureParameterf(texture, pname, param);
+			bindTextureForSetup(target, texture);
+			GL32C.glTexParameterf(target, pname, param);
 		}
 
 		@Override
 		public void texParameteriv(int texture, int target, int pname, int[] params) {
-			ARBDirectStateAccess.glTextureParameteriv(texture, pname, params);
+			bindTextureForSetup(target, texture);
+			GL32C.glTexParameteriv(target, pname, params);
 		}
+
 
 		@Override
 		public void readBuffer(int framebuffer, int buffer) {
@@ -556,7 +560,8 @@ public class IrisRenderSystem {
 
 		@Override
 		public int getTexParameteri(int texture, int target, int pname) {
-			return ARBDirectStateAccess.glGetTextureParameteri(texture, pname);
+			bindTextureForSetup(target, texture);
+			return GL32C.glGetTexParameteri(target, pname);
 		}
 
 		@Override

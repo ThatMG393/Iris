@@ -51,6 +51,7 @@ public abstract class MixinShaderManager_Overrides {
 			coreShaderMap.put(CoreShaders.POSITION_TEX_COLOR, p -> ShaderOverrides.getSkyTexColorShader((IrisRenderingPipeline) p));
 			coreShaderMap.put(CoreShaders.POSITION_COLOR, p -> ShaderOverrides.getSkyColorShader((IrisRenderingPipeline) p));
 			coreShaderMap.put(CoreShaders.PARTICLE, p -> ShaderOverrides.isPhase((IrisRenderingPipeline) p, WorldRenderingPhase.RAIN_SNOW) ? ShaderKey.WEATHER : ShaderKey.PARTICLES);
+			coreShaderMap.put(ShaderAccess.TRANSLUCENT_PARTICLE_SHADER, p -> ShaderOverrides.isPhase((IrisRenderingPipeline) p, WorldRenderingPhase.RAIN_SNOW) ? ShaderKey.WEATHER : ShaderKey.PARTICLES_TRANS);
 			coreShaderMap.put(CoreShaders.RENDERTYPE_ENTITY_CUTOUT, p -> getCutout(p));
 			coreShaderMap.put(CoreShaders.RENDERTYPE_ENTITY_SOLID, p -> getSolid(p));
 			coreShaderMap.put(CoreShaders.RENDERTYPE_ARMOR_CUTOUT_NO_CULL, p -> getCutout(p));
@@ -100,6 +101,7 @@ public abstract class MixinShaderManager_Overrides {
 			coreShaderMapShadow.put(CoreShaders.POSITION_TEX_COLOR, p -> ShaderKey.SHADOW_TEX_COLOR);
 			coreShaderMapShadow.put(CoreShaders.POSITION_COLOR, p -> ShaderKey.SHADOW_BASIC_COLOR);
 			coreShaderMapShadow.put(CoreShaders.PARTICLE, p -> ShaderKey.SHADOW_PARTICLES);
+			coreShaderMapShadow.put(ShaderAccess.TRANSLUCENT_PARTICLE_SHADER, p -> ShaderKey.SHADOW_PARTICLES);
 			coreShaderMapShadow.put(CoreShaders.RENDERTYPE_ENTITY_CUTOUT, p -> ShaderKey.SHADOW_ENTITIES_CUTOUT);
 			coreShaderMapShadow.put(CoreShaders.RENDERTYPE_ENTITY_SOLID, p -> ShaderKey.SHADOW_ENTITIES_CUTOUT);
 			coreShaderMapShadow.put(CoreShaders.RENDERTYPE_ARMOR_CUTOUT_NO_CULL, p -> ShaderKey.SHADOW_ENTITIES_CUTOUT);
@@ -219,6 +221,8 @@ public abstract class MixinShaderManager_Overrides {
 				cir.setReturnValue(getProgram(CoreShaders.RENDERTYPE_ENTITY_CUTOUT));
 			} else if (shaderProgram == ShaderAccess.IE_COMPAT) {
 				// TODO when IE updates
+			} else if (shaderProgram == ShaderAccess.TRANSLUCENT_PARTICLE_SHADER) {
+				cir.setReturnValue(getProgram(CoreShaders.PARTICLE));
 			}
 		}
 	}

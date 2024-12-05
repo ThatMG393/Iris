@@ -1,7 +1,9 @@
 package net.irisshaders.iris.pbr.texture;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.TextureUtil;
 import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.mixin.GlStateManagerAccessor;
 import net.irisshaders.iris.mixin.texture.SpriteContentsAnimatedTextureAccessor;
 import net.irisshaders.iris.mixin.texture.SpriteContentsFrameInfoAccessor;
 import net.irisshaders.iris.mixin.texture.SpriteContentsTickerAccessor;
@@ -43,6 +45,7 @@ public class PBRAtlasTexture extends AbstractTexture implements PBRDumpable {
 		this.atlasTexture = atlasTexture;
 		this.type = type;
 		id = ResourceLocation.fromNamespaceAndPath(atlasTexture.location().getNamespace(), atlasTexture.location().getPath().replace(".png", "") + type.getSuffix() + ".png");
+		setFilter(false, true);
 	}
 
 	public static void syncAnimation(SpriteContents.Ticker source, SpriteContents.Ticker target) {
