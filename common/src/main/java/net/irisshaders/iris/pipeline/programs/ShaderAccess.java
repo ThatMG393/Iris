@@ -24,6 +24,7 @@ public class ShaderAccess {
 		.padding(1)
 		.build();
 	public static final ShaderProgram TRANSLUCENT_PARTICLE_SHADER = new ShaderProgram(ResourceLocation.fromNamespaceAndPath("iris", "translucent_particle"), DefaultVertexFormat.PARTICLE, ShaderDefines.EMPTY);
+	public static final ShaderProgram WEATHER_SHADER = new ShaderProgram(ResourceLocation.fromNamespaceAndPath("iris", "weather"), DefaultVertexFormat.PARTICLE, ShaderDefines.EMPTY);
 
 	public static CompiledShaderProgram getParticleTranslucentShader() {
 		WorldRenderingPipeline pipeline = Iris.getPipelineManager().getPipelineNullable();
