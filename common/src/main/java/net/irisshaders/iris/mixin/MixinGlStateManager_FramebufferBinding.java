@@ -2,6 +2,7 @@ package net.irisshaders.iris.mixin;
 
 import com.mojang.blaze3d.platform.GlConst;
 import com.mojang.blaze3d.platform.GlStateManager;
+import net.irisshaders.iris.gl.IrisRenderSystem;
 import org.lwjgl.opengl.GL30C;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -53,6 +54,8 @@ public class MixinGlStateManager_FramebufferBinding {
 		if (iris$program == 0 && pInt0 == 0) {
 			ci.cancel();
 		}
+
+		IrisRenderSystem.onProgramUse();
 
 		iris$program = pInt0;
 	}

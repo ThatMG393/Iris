@@ -6,6 +6,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.sampler.SamplerLimits;
+import net.irisshaders.iris.gl.texture.TextureType;
 import net.irisshaders.iris.mixin.GlStateManagerAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -14,6 +15,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3i;
 import org.lwjgl.opengl.ARBDirectStateAccess;
 import org.lwjgl.opengl.ARBDrawBuffersBlend;
+import org.lwjgl.opengl.ARBTextureSwizzle;
 import org.lwjgl.opengl.EXTShaderImageLoadStore;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL30C;
@@ -44,6 +46,7 @@ public class IrisRenderSystem {
 	private static int polygonMode = GL43C.GL_FILL;
 	private static int backupPolygonMode = GL43C.GL_FILL;
 	private static int[] samplers;
+	private static int textureToUnswizzle;
 
 	public static void initRenderer() {
 		if (GL.getCapabilities().OpenGL45) {
@@ -485,6 +488,18 @@ public class IrisRenderSystem {
 		Minecraft.getInstance().smartCull = cullingState;
 		cullingState = true;
   }
+
+	public static void onProgramUse() {
+		if (textureToUnswizzle != 0) {
+			IrisRenderSystem.texParameteriv(textureToUnswizzle, TextureType.TEXTURE_2D.getGlType(), ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
+				new int[]{GL30C.GL_RED, GL30C.GL_GREEN, GL30C.GL_BLUE, GL30C.GL_ALPHA});
+			textureToUnswizzle = 0;
+		}
+	}
+
+	public static void setUnswizzle(int shaderTexture) {
+		textureToUnswizzle = shaderTexture;
+	}
 
 	public interface DSAAccess {
 		void generateMipmaps(int texture, int target);

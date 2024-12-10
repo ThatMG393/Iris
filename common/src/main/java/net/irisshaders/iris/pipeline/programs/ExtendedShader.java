@@ -146,12 +146,6 @@ public class ExtendedShader extends CompiledShaderProgram {
 			BlendModeOverride.restore();
 		}
 
-		if (intensitySwizzle && textureToUnswizzle != 0) {
-			IrisRenderSystem.texParameteriv(textureToUnswizzle, TextureType.TEXTURE_2D.getGlType(), ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
-				new int[]{GL30C.GL_RED, GL30C.GL_GREEN, GL30C.GL_BLUE, GL30C.GL_ALPHA});
-			textureToUnswizzle = 0;
-		}
-
 		Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
 
 		super.clear();
@@ -184,7 +178,7 @@ public class ExtendedShader extends CompiledShaderProgram {
 		GlStateManager._activeTexture(i);
 
 		if (intensitySwizzle) {
-			this.textureToUnswizzle = RenderSystem.getShaderTexture(0);
+			IrisRenderSystem.setUnswizzle(RenderSystem.getShaderTexture(0));
 			IrisRenderSystem.texParameteriv(RenderSystem.getShaderTexture(0), TextureType.TEXTURE_2D.getGlType(), ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
 				new int[]{GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED});
 		}
