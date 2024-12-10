@@ -26,14 +26,17 @@ public class IrisButton extends Button {
 	@Override
 	protected void renderWidget(GuiGraphics guiGraphics, int pInt1, int pInt2, float pFloat3) {
 		Minecraft lvMinecraft5 = Minecraft.getInstance();
+		guiGraphics.flush();
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.isHoveredOrFocused() ? this.alphaSupplier.getAsFloat() * 1.8f : this.alphaSupplier.getAsFloat());
 		RenderSystem.enableBlend();
 		RenderSystem.enableDepthTest();
 		GuiUtil.bindIrisWidgetsTexture();
-		GuiUtil.drawButton(guiGraphics, this.getX(), this.getY(), this.getWidth(), this.getHeight(), this.isHoveredOrFocused(), this.active);
+		GuiUtil.drawButton(guiGraphics, this.getX(), this.getY(), this.getWidth(), this.getHeight(), this.isHoveredOrFocused(), !this.isActive());
+		guiGraphics.flush();
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alphaSupplier.getAsFloat());
 		int lvInt6 = this.active ? 16777215 : 10526880;
 		this.renderString(guiGraphics, lvMinecraft5.font, lvInt6 | Mth.ceil(this.alphaSupplier.getAsFloat() * 255.0F) << 24);
+		guiGraphics.flush();
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
 	}
@@ -90,6 +93,7 @@ public class IrisButton extends Button {
 		public IrisButton build() {
 			IrisButton lvButton1 = new IrisButton(this.x, this.y, this.width, this.height, this.message, this.onPress, this.createNarration, this.alpha);
 			lvButton1.setTooltip(this.tooltip);
+			lvButton1.active = true;
 			return lvButton1;
 		}
 	}

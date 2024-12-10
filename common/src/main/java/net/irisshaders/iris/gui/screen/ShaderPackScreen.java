@@ -350,7 +350,7 @@ public class ShaderPackScreen extends Screen implements HudHideable {
 					Component.translatable("options.iris.shaderPackList")
 					: Component.translatable("options.iris.shaderPackSettings")
 			);
-			this.screenSwitchButton.active = optionMenuOpen || shaderPackList.getTopButtonRow().shadersEnabled;
+			this.screenSwitchButton.active = optionMenuOpen || (shaderPackList.getTopButtonRow().shadersEnabled && Iris.getCurrentPack().map(p -> !p.getMenuContainer().mainScreen.elements.isEmpty()).orElse(true));
 		}
 	}
 	private static final ResourceLocation BLUR_POST_CHAIN_ID = ResourceLocation.withDefaultNamespace("blur");
