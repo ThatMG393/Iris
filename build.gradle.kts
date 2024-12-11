@@ -5,7 +5,7 @@ plugins {
 }
 
 val MINECRAFT_VERSION by extra { "1.21.4" }
-val NEOFORGE_VERSION by extra { "21.4.0-beta" }
+val NEOFORGE_VERSION by extra { "21.4.13-beta" }
 val FABRIC_LOADER_VERSION by extra { "0.16.9" }
 val FABRIC_API_VERSION by extra { "0.110.5+1.21.4" }
 
