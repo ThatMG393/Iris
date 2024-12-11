@@ -4,6 +4,8 @@ import com.mojang.blaze3d.ProjectionType;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexSorting;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.sampler.SamplerLimits;
 import net.irisshaders.iris.gl.texture.TextureType;
@@ -46,7 +48,7 @@ public class IrisRenderSystem {
 	private static int polygonMode = GL43C.GL_FILL;
 	private static int backupPolygonMode = GL43C.GL_FILL;
 	private static int[] samplers;
-	private static int textureToUnswizzle;
+	private static final IntList textureToUnswizzle = new IntArrayList();
 
 	public static void initRenderer() {
 		if (GL.getCapabilities().OpenGL45) {
@@ -369,8 +371,20 @@ public class IrisRenderSystem {
 		return dsaState.createTexture(target);
 	}
 
+	private static int lastTex = -1;
+
 	public static void bindTextureForSetup(int glType, int glId) {
+		if (glType == GL46C.GL_TEXTURE_2D) {
+			lastTex = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].binding;
+		}
 		GL30C.glBindTexture(glType, glId);
+	}
+
+	public static void restoreTexture() {
+		if (lastTex != -1) {
+			GL30C.glBindTexture(GL46C.GL_TEXTURE_2D, lastTex);
+			lastTex = -1;
+		}
 	}
 
 	public static boolean supportsCompute() {
@@ -490,15 +504,15 @@ public class IrisRenderSystem {
   }
 
 	public static void onProgramUse() {
-		if (textureToUnswizzle != 0) {
-			IrisRenderSystem.texParameteriv(textureToUnswizzle, TextureType.TEXTURE_2D.getGlType(), ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
+		for (int i = 0; i < textureToUnswizzle.size(); i++) {
+			texParameteriv(textureToUnswizzle.getInt(i), TextureType.TEXTURE_2D.getGlType(), ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
 				new int[]{GL30C.GL_RED, GL30C.GL_GREEN, GL30C.GL_BLUE, GL30C.GL_ALPHA});
-			textureToUnswizzle = 0;
 		}
+		textureToUnswizzle.clear();
 	}
 
-	public static void setUnswizzle(int shaderTexture) {
-		textureToUnswizzle = shaderTexture;
+	public static void addUnswizzle(int shaderTexture) {
+		textureToUnswizzle.add(shaderTexture);
 	}
 
 	public interface DSAAccess {
@@ -546,20 +560,17 @@ public class IrisRenderSystem {
 
 		@Override
 		public void texParameteri(int texture, int target, int pname, int param) {
-			bindTextureForSetup(target, texture);
-			GL32C.glTexParameteri(target, pname, param);
+			ARBDirectStateAccess.glTextureParameteri(texture, pname, param);
 		}
 
 		@Override
 		public void texParameterf(int texture, int target, int pname, float param) {
-			bindTextureForSetup(target, texture);
-			GL32C.glTexParameterf(target, pname, param);
+			ARBDirectStateAccess.glTextureParameterf(texture, pname, param);
 		}
 
 		@Override
 		public void texParameteriv(int texture, int target, int pname, int[] params) {
-			bindTextureForSetup(target, texture);
-			GL32C.glTexParameteriv(target, pname, params);
+			ARBDirectStateAccess.glTextureParameteriv(texture, pname, params);
 		}
 
 
@@ -586,14 +597,18 @@ public class IrisRenderSystem {
 
 		@Override
 		public void bindTextureToUnit(int target, int unit, int texture) {
-			if (GlStateManagerAccessor.getTEXTURES()[unit].binding == texture) {
-				return;
+			if (target == GL46C.GL_TEXTURE_2D) {
+				if (GlStateManagerAccessor.getTEXTURES()[unit].binding == texture) {
+					return;
+				}
+
+				ARBDirectStateAccess.glBindTextureUnit(unit, texture);
+
+				// Manually fix GLStateManager bindings...
+				GlStateManagerAccessor.getTEXTURES()[unit].binding = texture;
+			} else {
+				ARBDirectStateAccess.glBindTextureUnit(unit, texture);
 			}
-
-			ARBDirectStateAccess.glBindTextureUnit(unit, texture);
-
-			// Manually fix GLStateManager bindings...
-			GlStateManagerAccessor.getTEXTURES()[unit].binding = texture;
 		}
 
 		@Override
@@ -632,26 +647,31 @@ public class IrisRenderSystem {
 	public static class DSAUnsupported implements DSAAccess {
 		@Override
 		public void generateMipmaps(int texture, int target) {
+			int previous = GlStateManagerAccessor.getTEXTURES()[GlStateManagerAccessor.getActiveTexture()].binding;
 			GlStateManager._bindTexture(texture);
 			GL32C.glGenerateMipmap(target);
+			GlStateManager._bindTexture(previous);
 		}
 
 		@Override
 		public void texParameteri(int texture, int target, int pname, int param) {
 			bindTextureForSetup(target, texture);
 			GL32C.glTexParameteri(target, pname, param);
+			restoreTexture();
 		}
 
 		@Override
 		public void texParameterf(int texture, int target, int pname, float param) {
 			bindTextureForSetup(target, texture);
 			GL32C.glTexParameterf(target, pname, param);
+			restoreTexture();
 		}
 
 		@Override
 		public void texParameteriv(int texture, int target, int pname, int[] params) {
 			bindTextureForSetup(target, texture);
 			GL32C.glTexParameteriv(target, pname, params);
+			restoreTexture();
 		}
 
 		@Override
@@ -684,7 +704,10 @@ public class IrisRenderSystem {
 		public void bindTextureToUnit(int target, int unit, int texture) {
 			int activeTexture = GlStateManager._getActiveTexture();
 			GlStateManager._activeTexture(GL30C.GL_TEXTURE0 + unit);
-			bindTextureForSetup(target, texture);
+			GL46C.glBindTexture(target, texture);
+			if (target == GL46C.GL_TEXTURE_2D) {
+				GlStateManagerAccessor.getTEXTURES()[unit].binding = texture;
+			}
 			GlStateManager._activeTexture(activeTexture);
 		}
 
@@ -721,7 +744,8 @@ public class IrisRenderSystem {
 		@Override
 		public int createTexture(int target) {
 			int texture = GlStateManager._genTexture();
-			GlStateManager._bindTexture(texture);
+			bindTextureForSetup(target, texture);
+			restoreTexture();
 			return texture;
 		}
 

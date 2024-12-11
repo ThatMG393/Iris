@@ -178,7 +178,7 @@ public class ExtendedShader extends CompiledShaderProgram {
 		GlStateManager._activeTexture(i);
 
 		if (intensitySwizzle) {
-			IrisRenderSystem.setUnswizzle(RenderSystem.getShaderTexture(0));
+			IrisRenderSystem.addUnswizzle(RenderSystem.getShaderTexture(0));
 			IrisRenderSystem.texParameteriv(RenderSystem.getShaderTexture(0), TextureType.TEXTURE_2D.getGlType(), ARBTextureSwizzle.GL_TEXTURE_SWIZZLE_RGBA,
 				new int[]{GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED, GL30C.GL_RED});
 		}
