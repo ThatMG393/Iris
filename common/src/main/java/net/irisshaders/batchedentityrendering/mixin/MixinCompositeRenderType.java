@@ -32,7 +32,7 @@ public abstract class MixinCompositeRenderType extends RenderType implements Ble
 			transparencyType = TransparencyType.WATER_MASK;
 		} else if ("lines".equals(name)) {
 			transparencyType = TransparencyType.LINES;
-		} else if (transparency == RenderStateShardAccessor.getNO_TRANSPARENCY()) {
+		} else if (transparency == RenderStateShardAccessor.getNO_TRANSPARENCY() || "sunrise_sunset".equals(name)) {
 			transparencyType = TransparencyType.OPAQUE;
 		} else if (transparency == RenderStateShardAccessor.getGLINT_TRANSPARENCY() ||
 			transparency == RenderStateShardAccessor.getCRUMBLING_TRANSPARENCY()) {
