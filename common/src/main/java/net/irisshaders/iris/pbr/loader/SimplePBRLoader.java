@@ -34,7 +34,13 @@ public class SimplePBRLoader implements PBRTextureLoader<SimpleTexture> {
 		ResourceLocation pbrImageLocation = imageLocation.withPath(pbrType::appendSuffix);
 
 		SimpleTexture pbrTexture = new SimpleTexture(pbrImageLocation);
-		pbrTexture.apply(loadContentsSafe(pbrTexture, resourceManager));
+		TextureContents contents = loadContentsSafe(pbrTexture, resourceManager);
+
+		if (contents != null) {
+			pbrTexture.releaseId();
+			return null;
+		}
+		pbrTexture.apply(contents);
 
 		return pbrTexture;
 	}
@@ -43,7 +49,7 @@ public class SimplePBRLoader implements PBRTextureLoader<SimpleTexture> {
 		try {
 			return texture.loadContents(manager);
 		} catch (Exception var4) {
-			return TextureContents.createMissing();
+			return null;
 		}
 	}
 }
