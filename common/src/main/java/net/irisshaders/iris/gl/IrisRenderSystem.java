@@ -586,6 +586,9 @@ public class IrisRenderSystem {
 
 		@Override
 		public int getTexParameteri(int texture, int target, int pname) {
+			if (Screen.hasAltDown()) {
+				return ARBDirectStateAccess.glGetTextureParameteri(texture, pname);
+			}
 			bindTextureForSetup(target, texture);
 			return GL32C.glGetTexParameteri(target, pname);
 		}
