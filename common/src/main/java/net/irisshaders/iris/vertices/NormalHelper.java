@@ -143,4 +143,76 @@ public final class NormalHelper {
 
         output.set(oX * 0.5f + 0.5f, oY * 0.5f + 0.5f);
     }
+
+    public static int computeTangent(float normalX, float normalY, float normalZ, float x0, float y0, float z0, float u0, float v0,
+                                     float x1, float y1, float z1, float u1, float v1,
+                                     float x2, float y2, float z2, float u2, float v2) {
+        return computeTangent(null, normalX, normalY, normalZ, 
+            x0, y0, z0, u0, v0, 
+            x1, y1, z1, u1, v1, 
+            x2, y2, z2, u2, v2);
+    }
+
+    public static Vector3f octahedronDecode(float inX, float inY) {
+        Vector2f f = new Vector2f(inX * 2.0f - 1.0f, inY * 2.0f - 1.0f);
+        Vector3f n = new Vector3f(f.x, f.y, 1.0f - Math.abs(f.x) - Math.abs(f.y));
+        
+        float t = Math.max(Math.min(-n.z, 1.0f), 0.0f);
+        n.x += n.x >= 0 ? -t : t;
+        n.y += n.y >= 0 ? -t : t;
+        
+        return n.normalize();
+    }
+
+    public static int computeTangentSmooth(float normalX, float normalY, float normalZ, TriView t) {
+        float x0 = t.x(0), y0 = t.y(0), z0 = t.z(0);
+        float x1 = t.x(1), y1 = t.y(1), z1 = t.z(1);
+        float x2 = t.x(2), y2 = t.y(2), z2 = t.z(2);
+
+        float edge1x = x1 - x0, edge1y = y1 - y0, edge1z = z1 - z0;
+        float edge2x = x2 - x0, edge2y = y2 - y0, edge2z = z2 - z0;
+
+        float u0 = t.u(0), v0 = t.v(0);
+        float u1 = t.u(1), v1 = t.v(1);
+        float u2 = t.u(2), v2 = t.v(2);
+
+        float deltaU1 = u1 - u0, deltaV1 = v1 - v0;
+        float deltaU2 = u2 - u0, deltaV2 = v2 - v0;
+
+        float d0 = x0 * normalX + y0 * normalY + z0 * normalZ;
+        float d1 = x1 * normalX + y1 * normalY + z1 * normalZ;
+        float d2 = x2 * normalX + y2 * normalY + z2 * normalZ;
+
+        x0 -= d0 * normalX;
+        y0 -= d0 * normalY;
+        z0 -= d0 * normalZ;
+
+        x1 -= d1 * normalX;
+        y1 -= d1 * normalY;
+        z1 -= d1 * normalZ;
+
+        x2 -= d2 * normalX;
+        y2 -= d2 * normalY;
+        z2 -= d2 * normalZ;
+
+        float det = deltaU1 * deltaV2 - deltaU2 * deltaV1;
+        float invDet = Math.abs(det) > EPSILON ? 1.0f / det : 1.0f;
+
+        float tx = (deltaV2 * edge1x - deltaV1 * edge2x) * invDet;
+        float ty = (deltaV2 * edge1y - deltaV1 * edge2y) * invDet;
+        float tz = (deltaV2 * edge1z - deltaV1 * edge2z) * invDet;
+
+        float tcoeff = fastInvSqrt(tx * tx + ty * ty + tz * tz);
+        tx *= tcoeff;
+        ty *= tcoeff;
+        tz *= tcoeff;
+
+        float bitx = (normalY * tz - normalZ * ty);
+        float bity = (normalZ * tx - normalX * tz);
+        float bitz = (normalX * ty - normalY * tx);
+
+        float tangentW = (bitx * tx + bity * ty + bitz * tz) < 0 ? -1.0f : 1.0f;
+
+        return NormI8.pack(tx, ty, tz, tangentW);
+	}
 }
