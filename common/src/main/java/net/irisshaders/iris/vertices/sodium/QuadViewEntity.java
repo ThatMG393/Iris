@@ -2,38 +2,45 @@ package net.irisshaders.iris.vertices.sodium;
 
 import net.irisshaders.iris.vertices.views.QuadView;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.Pointer;
 
 public class QuadViewEntity implements QuadView {
     private long writePointer;
     private int stride;
 
     public void setup(long writePointer, int stride) {
-        this.writePointer = writePointer;
-        this.stride = stride;
+        // Ensure pointer is aligned according to platform requirements
+        this.writePointer = writePointer & ~((1L << Pointer.POINTER_SHIFT) - 1);
+        this.stride = (stride + (1 << Pointer.POINTER_SHIFT) - 1) & ~((1 << Pointer.POINTER_SHIFT) - 1);
+    }
+
+    private long getOffset(int index) {
+        // Ensure index arithmetic is platform-aware
+        return writePointer + (((long) stride * (3 - index)) & ~((1L << Pointer.POINTER_SHIFT) - 1));
     }
 
     @Override
     public float x(int index) {
-        return MemoryUtil.memGetFloat(writePointer + (long)(stride * (3 - index)));
+        return MemoryUtil.memGetFloat(getOffset(index));
     }
 
     @Override
     public float y(int index) {
-        return MemoryUtil.memGetFloat(writePointer + (long)(stride * (3 - index)) + 4);
+        return MemoryUtil.memGetFloat(getOffset(index) + (long)Pointer.POINTER_SIZE);
     }
 
     @Override
     public float z(int index) {
-        return MemoryUtil.memGetFloat(writePointer + (long)(stride * (3 - index)) + 8);
+        return MemoryUtil.memGetFloat(getOffset(index) + (long)(Pointer.POINTER_SIZE * 2));
     }
 
     @Override
     public float u(int index) {
-        return MemoryUtil.memGetFloat(writePointer + (long)(stride * (3 - index)) + 16);
+        return MemoryUtil.memGetFloat(getOffset(index) + (long)(Pointer.POINTER_SIZE * 4));
     }
 
     @Override
     public float v(int index) {
-        return MemoryUtil.memGetFloat(writePointer + (long)(stride * (3 - index)) + 20);
+        return MemoryUtil.memGetFloat(getOffset(index) + (long)(Pointer.POINTER_SIZE * 5));
     }
 }
