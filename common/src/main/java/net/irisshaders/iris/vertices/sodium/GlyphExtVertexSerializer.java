@@ -46,7 +46,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
     }
 
     @Override
-    public void serialize(int src, int dst, int vertexCount) {
+    public void serialize(long src, long dst, int vertexCount) {
         float uSum = 0.0f, vSum = 0.0f;
 
         for (int i = 0; i < vertexCount; i++) {
