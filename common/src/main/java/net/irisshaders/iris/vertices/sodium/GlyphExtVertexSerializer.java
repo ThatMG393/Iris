@@ -13,34 +13,37 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Pointer;
 
 public class GlyphExtVertexSerializer implements VertexSerializer {
+    private static final int POINTER_SIZE = Pointer.POINTER_SIZE;
     private static final int STRIDE = align(IrisVertexFormats.GLYPH.getVertexSize());
     private static final int VANILLA_STRIDE = align(DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP.getVertexSize());
+    
     private static final int OFFSET_MID_TEXTURE = align(IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.MID_TEXTURE_ELEMENT));
     private static final int OFFSET_NORMAL = align(IrisVertexFormats.GLYPH.getOffset(VertexFormatElement.NORMAL));
     private static final int OFFSET_TANGENT = align(IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.TANGENT_ELEMENT));
-    private static final int FLOAT_ALIGN = 4;
-    private static final QuadViewEntity QUAD = new QuadViewEntity();
+
     private static final Vector3f NORMAL = new Vector3f();
+    private static final QuadViewEntity QUAD = new QuadViewEntity();
 
     private static int align(int value) {
-        return (value + (Pointer.POINTER_SIZE - 1)) & ~(Pointer.POINTER_SIZE - 1);
+        return (value + (POINTER_SIZE - 1)) & ~(POINTER_SIZE - 1);
     }
 
     private static long alignPtr(long ptr) {
-        return (ptr + (Pointer.POINTER_SIZE - 1)) & ~(Pointer.POINTER_SIZE - 1);
+        return (ptr + (POINTER_SIZE - 1)) & ~(POINTER_SIZE - 1);
     }
 
-    private static void endQuad(float u, float v, long dst) {
+    private void endQuad(float u, float v, long dst) {
         dst = alignPtr(dst);
         QUAD.setup(dst, STRIDE);
         NormalHelper.computeFaceNormal(NORMAL, QUAD);
+        
         int normal = NormI8.pack(NORMAL);
         int tangent = NormalHelper.computeTangent(NORMAL.x, NORMAL.y, NORMAL.z, QUAD);
 
         u *= 0.25f;
         v *= 0.25f;
 
-        long baseOffset = dst & ~(FLOAT_ALIGN - 1);
+        long baseOffset = dst & ~3; // Align to 4-byte boundary
         for (int i = 0; i < 4; i++) {
             long vertexOffset = baseOffset - ((long) STRIDE * i);
             long midTexOffset = alignPtr(vertexOffset + OFFSET_MID_TEXTURE);
@@ -48,7 +51,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
             long tangentOffset = alignPtr(vertexOffset + OFFSET_TANGENT);
 
             MemoryUtil.memPutFloat(midTexOffset, u);
-            MemoryUtil.memPutFloat(midTexOffset + FLOAT_ALIGN, v);
+            MemoryUtil.memPutFloat(midTexOffset + 4, v);
             MemoryUtil.memPutInt(normalOffset, normal);
             MemoryUtil.memPutInt(tangentOffset, tangent);
         }
@@ -58,7 +61,9 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
     public void serialize(long src, long dst, int vertexCount) {
         src = alignPtr(src);
         dst = alignPtr(dst);
+        
         float uSum = 0, vSum = 0;
+        
         CapturedRenderingState state = CapturedRenderingState.INSTANCE;
         short entity = (short) state.getCurrentRenderedEntity();
         short blockEntity = (short) state.getCurrentRenderedBlockEntity();
@@ -69,6 +74,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
             vSum += MemoryUtil.memGetFloat(alignPtr(src + 20));
 
             MemoryIntrinsics.copyMemory(src, dst, 28);
+            
             MemoryUtil.memPutShort(alignPtr(dst + 32), entity);
             MemoryUtil.memPutShort(alignPtr(dst + 34), blockEntity);
             MemoryUtil.memPutShort(alignPtr(dst + 36), item);
@@ -81,4 +87,4 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
 
         endQuad(uSum, vSum, dst);
     }
-								   }
+}
