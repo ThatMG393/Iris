@@ -26,7 +26,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
     private static final Vector3f saveNormal = new Vector3f();
     private static final int STRIDE = 52; // Total size after padding
 
-    private static void endQuad(float uSum, float vSum, int src, int dst) {
+    private static void endQuad(float uSum, float vSum, long src, long dst) {
         uSum *= 0.25f;
         vSum *= 0.25f;
 
@@ -37,7 +37,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
         int tangent = NormalHelper.computeTangent(saveNormal.x, saveNormal.y, saveNormal.z, quad);
 
         for (int vertex = 0; vertex < 4; vertex++) {
-            int offset = dst - STRIDE * vertex;
+            long offset = dst - STRIDE * vertex;
             MemoryUtil.memPutFloat(offset + OFFSET_MID_TEXTURE, uSum);
             MemoryUtil.memPutFloat(offset + OFFSET_MID_TEXTURE + 4, vSum);
             MemoryUtil.memPutInt(offset + OFFSET_NORMAL, normal);
@@ -58,7 +58,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
 
             MemoryIntrinsics.copyMemory(src, dst, 28);
 
-            int currentDst = dst + OFFSET_ENTITY;
+            long currentDst = dst + OFFSET_ENTITY;
             MemoryUtil.memPutShort(currentDst, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
             MemoryUtil.memPutShort(currentDst + 2, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
             MemoryUtil.memPutShort(currentDst + 4, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
