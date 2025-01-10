@@ -10,81 +10,59 @@ import net.irisshaders.iris.vertices.NormI8;
 import net.irisshaders.iris.vertices.NormalHelper;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.Pointer;
 
 public class GlyphExtVertexSerializer implements VertexSerializer {
-    private static final int POINTER_SIZE = Pointer.POINTER_SIZE;
-    private static final int STRIDE = align(IrisVertexFormats.GLYPH.getVertexSize());
-    private static final int VANILLA_STRIDE = align(DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP.getVertexSize());
+    private static final int VANILLA_STRIDE = DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP.getVertexSize();
+    private static final int EXTENDED_STRIDE = IrisVertexFormats.GLYPH.getVertexSize();
     
-    private static final int OFFSET_MID_TEXTURE = align(IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.MID_TEXTURE_ELEMENT));
-    private static final int OFFSET_NORMAL = align(IrisVertexFormats.GLYPH.getOffset(VertexFormatElement.NORMAL));
-    private static final int OFFSET_TANGENT = align(IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.TANGENT_ELEMENT));
-
+    private static final int POSITION_OFFSET = 0;
+    private static final int COLOR_OFFSET = 12;
+    private static final int TEXCOORD_OFFSET = 16;
+    private static final int LIGHTMAP_OFFSET = 24;
+    private static final int MIDTEX_OFFSET = 28;
+    private static final int NORMAL_OFFSET = 36;
+    private static final int TANGENT_OFFSET = 40;
+    private static final int ENTITY_OFFSET = 44;
+    
     private static final Vector3f NORMAL = new Vector3f();
     private static final QuadViewEntity QUAD = new QuadViewEntity();
 
-    private static int align(int value) {
-        return (value + (POINTER_SIZE - 1)) & ~(POINTER_SIZE - 1);
-    }
-
-    private static long alignPtr(long ptr) {
-        return (ptr + (POINTER_SIZE - 1)) & ~(POINTER_SIZE - 1);
-    }
-
-    private void endQuad(float u, float v, long dst) {
-        dst = alignPtr(dst);
-        QUAD.setup(dst, STRIDE);
-        NormalHelper.computeFaceNormal(NORMAL, QUAD);
+    @Override
+    public void serialize(long src, long dst, int vertexCount) {
+        if (vertexCount != 4) return;
         
+        // Copy base vertex data
+        for (int i = 0; i < vertexCount; i++) {
+            long srcVertex = src + (i * VANILLA_STRIDE);
+            long dstVertex = dst + (i * EXTENDED_STRIDE);
+            
+            // Position, color, UV, lightmap
+            MemoryIntrinsics.copyMemory(srcVertex, dstVertex, VANILLA_STRIDE);
+            
+            // Additional attributes
+            CapturedRenderingState state = CapturedRenderingState.INSTANCE;
+            MemoryUtil.memPutShort(dstVertex + ENTITY_OFFSET, (short) state.getCurrentRenderedEntity());
+            MemoryUtil.memPutShort(dstVertex + ENTITY_OFFSET + 2, (short) state.getCurrentRenderedBlockEntity());
+            MemoryUtil.memPutShort(dstVertex + ENTITY_OFFSET + 4, (short) state.getCurrentRenderedItem());
+        }
+
+        // Compute normal and tangent for the quad
+        QUAD.setup(dst, EXTENDED_STRIDE);
+        NormalHelper.computeFaceNormal(NORMAL, QUAD);
         int normal = NormI8.pack(NORMAL);
         int tangent = NormalHelper.computeTangent(NORMAL.x, NORMAL.y, NORMAL.z, QUAD);
 
-        u *= 0.25f;
-        v *= 0.25f;
-
-        long baseOffset = dst & ~3; // Align to 4-byte boundary
-        for (int i = 0; i < 4; i++) {
-            long vertexOffset = baseOffset - ((long) STRIDE * i);
-            long midTexOffset = alignPtr(vertexOffset + OFFSET_MID_TEXTURE);
-            long normalOffset = alignPtr(vertexOffset + OFFSET_NORMAL);
-            long tangentOffset = alignPtr(vertexOffset + OFFSET_TANGENT);
-
-            MemoryUtil.memPutFloat(midTexOffset, u);
-            MemoryUtil.memPutFloat(midTexOffset + 4, v);
-            MemoryUtil.memPutInt(normalOffset, normal);
-            MemoryUtil.memPutInt(tangentOffset, tangent);
-        }
-    }
-
-    @Override
-    public void serialize(long src, long dst, int vertexCount) {
-        src = alignPtr(src);
-        dst = alignPtr(dst);
-        
-        float uSum = 0, vSum = 0;
-        
-        CapturedRenderingState state = CapturedRenderingState.INSTANCE;
-        short entity = (short) state.getCurrentRenderedEntity();
-        short blockEntity = (short) state.getCurrentRenderedBlockEntity();
-        short item = (short) state.getCurrentRenderedItem();
-
+        // Write normal and tangent to all vertices
         for (int i = 0; i < vertexCount; i++) {
-            uSum += MemoryUtil.memGetFloat(alignPtr(src + 16));
-            vSum += MemoryUtil.memGetFloat(alignPtr(src + 20));
-
-            MemoryIntrinsics.copyMemory(src, dst, 28);
+            long vertex = dst + (i * EXTENDED_STRIDE);
+            MemoryUtil.memPutInt(vertex + NORMAL_OFFSET, normal);
+            MemoryUtil.memPutInt(vertex + TANGENT_OFFSET, tangent);
             
-            MemoryUtil.memPutShort(alignPtr(dst + 32), entity);
-            MemoryUtil.memPutShort(alignPtr(dst + 34), blockEntity);
-            MemoryUtil.memPutShort(alignPtr(dst + 36), item);
-
-            if (i != 3) {
-                src += VANILLA_STRIDE;
-                dst += STRIDE;
-            }
+            // Preserve original UV coordinates
+            float u = MemoryUtil.memGetFloat(src + (i * VANILLA_STRIDE) + TEXCOORD_OFFSET);
+            float v = MemoryUtil.memGetFloat(src + (i * VANILLA_STRIDE) + TEXCOORD_OFFSET + 4);
+            MemoryUtil.memPutFloat(vertex + MIDTEX_OFFSET, u);
+            MemoryUtil.memPutFloat(vertex + MIDTEX_OFFSET + 4, v);
         }
-
-        endQuad(uSum, vSum, dst);
     }
 }
