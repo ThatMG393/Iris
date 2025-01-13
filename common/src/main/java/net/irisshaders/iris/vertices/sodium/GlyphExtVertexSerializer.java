@@ -43,11 +43,12 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
 
         int tangent = NormalHelper.computeTangent(normalX, normalY, normalZ, quad);
 
-        for (long vertex = 0; vertex < 4; vertex++) {
-            MemoryUtil.memPutFloat(dst + OFFSET_MID_TEXTURE - STRIDE * vertex, uSum);
-            MemoryUtil.memPutFloat(dst + (OFFSET_MID_TEXTURE + 4) - STRIDE * vertex, vSum);
-            MemoryUtil.memPutInt(dst + OFFSET_NORMAL - STRIDE * vertex, normal);
-            MemoryUtil.memPutInt(dst + OFFSET_TANGENT - STRIDE * vertex, tangent);
+        for (int vertex = 0; vertex < 4; vertex++) {
+            long offset = dst - (((long) STRIDE * vertex) & 0xFFFFFFFFL);
+            MemoryUtil.memPutInt(offset + OFFSET_MID_TEXTURE, Float.floatToRawIntBits(uSum));
+            MemoryUtil.memPutInt(offset + (OFFSET_MID_TEXTURE + 4), Float.floatToRawIntBits(vSum));
+            MemoryUtil.memPutInt(offset + OFFSET_NORMAL, normal);
+            MemoryUtil.memPutInt(offset + OFFSET_TANGENT, tangent);
         }
     }
 
@@ -56,26 +57,21 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
         float uSum = 0.0f, vSum = 0.0f;
 
         for (int i = 0; i < vertexCount; i++) {
-            float u = MemoryUtil.memGetFloat(src + OFFSET_TEXTURE);
-            float v = MemoryUtil.memGetFloat(src + OFFSET_TEXTURE + 4);
+            float u = Float.intBitsToFloat(MemoryUtil.memGetInt(src + OFFSET_TEXTURE));
+            float v = Float.intBitsToFloat(MemoryUtil.memGetInt(src + OFFSET_TEXTURE + 4));
 
             uSum += u;
             vSum += v;
 
-            // Copy the first 28 bytes of the vertex data
             MemoryIntrinsics.copyMemory(src, dst, 28);
 
-            // Store entity information
-            MemoryUtil.memPutShort(dst + 32, 
-                (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
-            MemoryUtil.memPutShort(dst + 34, 
-                (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-            MemoryUtil.memPutShort(dst + 36, 
-                (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
+            MemoryUtil.memPutShort(dst + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
+            MemoryUtil.memPutShort(dst + 34, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
+            MemoryUtil.memPutShort(dst + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
 
             if (i != 3) {
                 src += DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP.getVertexSize();
-                dst += STRIDE; // Move to the next vertex position
+                dst += STRIDE;
             }
         }
 
