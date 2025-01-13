@@ -9,38 +9,36 @@ public class QuadViewEntity implements QuadView {
     private int stride;
 
     public void setup(long writePointer, int stride) {
-        // Ensure pointer is aligned according to platform requirements
         this.writePointer = writePointer & ~((1L << Pointer.POINTER_SHIFT) - 1);
         this.stride = (stride + (1 << Pointer.POINTER_SHIFT) - 1) & ~((1 << Pointer.POINTER_SHIFT) - 1);
     }
 
     @Override
     public float x(int index) {
-        return MemoryUtil.memGetFloat(getOffset(index));
+        return Float.intBitsToFloat(getInt(0, index));
     }
 
     @Override
     public float y(int index) {
-        return MemoryUtil.memGetFloat(getOffset(index) + 4);
+        return Float.intBitsToFloat(getInt(4, index));
     }
 
     @Override
     public float z(int index) {
-        return MemoryUtil.memGetFloat(getOffset(index) + 8);
+        return Float.intBitsToFloat(getInt(8, index));
     }
 
     @Override
     public float u(int index) {
-        return MemoryUtil.memGetFloat(getOffset(index) + 16);
+        return Float.intBitsToFloat(getInt(16, index));
     }
 
     @Override
     public float v(int index) {
-        return MemoryUtil.memGetFloat(getOffset(index) + 20);
+        return Float.intBitsToFloat(getInt(20, index));
     }
 
-    private long getOffset(int index) {
-        // Ensure index arithmetic is platform-aware
-        return writePointer + ((long) stride * index);
+    private int getInt(int offset, int index) {
+        return MemoryUtil.memGetInt(writePointer + ((long) stride * index & 0xFFFFFFFFL) + (offset & 0xFFFFFFFFL));
     }
 }
