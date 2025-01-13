@@ -10,6 +10,7 @@ import net.irisshaders.iris.vertices.NormI8;
 import net.irisshaders.iris.vertices.NormalHelper;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.Pointer;
 
 public class GlyphExtVertexSerializer implements VertexSerializer {
     private static final int OFFSET_POSITION = 0;
