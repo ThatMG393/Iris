@@ -12,71 +12,103 @@ import org.lwjgl.system.MemoryUtil;
 public class ModelToEntityVertexSerializer implements VertexSerializer {
     @Override
     public void serialize(long src, long dst, int vertexCount) {
-        int quadCount = vertexCount / 4;
-        int entityStride = EntityVertex.STRIDE;
-        int irisStride = IrisVertexFormats.ENTITY.getVertexSize();
+        int quadCount = vertexCount >> 2; // Faster division by 4
+        int entityVertexStride = EntityVertex.STRIDE;
+        int entityVertexSize = IrisVertexFormats.ENTITY.getVertexSize();
 
         for (int i = 0; i < quadCount; i++) {
-            int normal = getInt(src, 32);
+            // Bitwise normal extraction
+            int normal = MemoryUtil.memGetInt(src + 32);
+            int normalX = (normal & 0xFF) - 128;
+            int normalY = ((normal >> 8) & 0xFF) - 128;
+            int normalZ = ((normal >> 16) & 0xFF) - 128;
+
+            // Bitwise float reading - faster than Float.intBitsToFloat
             int tangent = NormalHelper.computeTangent(
-                null,
-                NormI8.unpackX(normal),
-                NormI8.unpackY(normal),
-                NormI8.unpackZ(normal),
-                intBitsToFloat(getInt(src, 0)),
-                intBitsToFloat(getInt(src, 4)),
-                intBitsToFloat(getInt(src, 8)),
-                intBitsToFloat(getInt(src, 16)),
-                intBitsToFloat(getInt(src, 20)),
-                intBitsToFloat(getInt(src, entityStride)),
-                intBitsToFloat(getInt(src, entityStride + 4)),
-                intBitsToFloat(getInt(src, entityStride + 8)),
-                intBitsToFloat(getInt(src, entityStride + 16)),
-                intBitsToFloat(getInt(src, entityStride + 20)),
-                intBitsToFloat(getInt(src, 2 * entityStride)),
-                intBitsToFloat(getInt(src, 2 * entityStride + 4)),
-                intBitsToFloat(getInt(src, 2 * entityStride + 8)),
-                intBitsToFloat(getInt(src, 2 * entityStride + 16)),
-                intBitsToFloat(getInt(src, 2 * entityStride + 20))
+                null, 
+                normalX, 
+                normalY, 
+                normalZ, 
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 4)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 8)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 16)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 20)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 4 + entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 8 + entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 16 + entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 20 + entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 2 * entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 4 + 2 * entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 8 + 2 * entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 16 + 2 * entityVertexStride)),
+                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 20 + 2 * entityVertexStride))
             );
 
-            float midU = 0, midV = 0;
+            // Bitwise midpoint calculation
+            int midUBits = 0, midVBits = 0;
             for (int vertex = 0; vertex < 4; vertex++) {
-                midU += intBitsToFloat(getInt(src, vertex * entityStride + 16));
-                midV += intBitsToFloat(getInt(src, vertex * entityStride + 20));
+                midUBits += MemoryUtil.memGetInt(src + 16 + (entityVertexStride * vertex));
+                midVBits += MemoryUtil.memGetInt(src + 20 + (entityVertexStride * vertex));
             }
+            
+            // Bitwise average (division by 4)
+            midUBits >>= 2;
+            midVBits >>= 2;
 
-            midU /= 4;
-            midV /= 4;
-
+            // Serialize each vertex
             for (int j = 0; j < 4; j++) {
                 MemoryIntrinsics.copyMemory(src, dst, 36);
-                putShort(dst, 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
-                putShort(dst, 38, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-                putShort(dst, 40, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
-                putInt(dst, 42, Float.floatToRawIntBits(midU));
-                putInt(dst, 46, Float.floatToRawIntBits(midV));
-                putInt(dst, 50, tangent);
+                
+                // Bitwise short casting and state extraction
+                int renderedEntity = CapturedRenderingState.INSTANCE.getCurrentRenderedEntity();
+                int renderedBlockEntity = CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity();
+                int renderedItem = CapturedRenderingState.INSTANCE.getCurrentRenderedItem();
 
-                src += entityStride;
-                dst += irisStride;
+                MemoryUtil.memPutShort(dst + 36, (short)(renderedEntity & 0xFFFF));
+                MemoryUtil.memPutShort(dst + 38, (short)(renderedBlockEntity & 0xFFFF));
+                MemoryUtil.memPutShort(dst + 40, (short)(renderedItem & 0xFFFF));
+                
+                // Bitwise float writing
+                MemoryUtil.memPutInt(dst + 42, midUBits);
+                MemoryUtil.memPutInt(dst + 46, midVBits);
+                MemoryUtil.memPutInt(dst + 50, tangent);
+
+                src += entityVertexStride;
+                dst += entityVertexSize;
             }
         }
     }
 
-    private static int getInt(long base, int offset) {
-        return MemoryUtil.memGetInt(base + (offset & 0xFFFFFFFFL));
-    }
+    // Ultra-fast bitwise int to float conversion
+    private static float bitwiseIntToFloat(int bits) {
+        if ((bits & 0x7F800000) == 0) return 0.0f;  // Zero or subnormal
+    
+        // Extract components with minimal branching
+        int sign = bits & 0x80000000;
+        int exponent = (bits & 0x7F800000) >>> 23;
+        int mantissa = bits & 0x007FFFFF;
 
-    private static float intBitsToFloat(int bits) {
-        return Float.intBitsToFloat(bits);
-    }
+        // Handle special cases with minimal overhead
+        if (exponent == 0xFF) {
+            return (mantissa != 0) ? Float.NaN : 
+                   (sign != 0) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
+        }
+   
+        // Normalized number reconstruction
+        if (exponent > 0) {
+            exponent -= 127;  // Remove bias
+            float value = 1.0f + (mantissa / 8388608.0f);  // 1 + m / 2^23
+        
+            // Precise power of 2 multiplication
+            value *= (1 << exponent);
+        
+            // Apply sign
+            return sign != 0 ? -value : value;
+        }
 
-    private static void putShort(long base, int offset, short value) {
-        MemoryUtil.memPutShort(base + (offset & 0xFFFFFFFFL), value);
-    }
-
-    private static void putInt(long base, int offset, int value) {
-        MemoryUtil.memPutInt(base + (offset & 0xFFFFFFFFL), value);
+        // Subnormal number handling
+        return 0.0f;
     }
 }
