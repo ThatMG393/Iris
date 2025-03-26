@@ -8,10 +8,9 @@ import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 import net.irisshaders.iris.vertices.NormalHelper;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.Pointer;
 
 public class ModelToEntityVertexSerializer implements VertexSerializer {
-    private final boolean is32bit = (MemoryUtil.POINTER_SIZE == 4);
-
     @Override
     public void serialize(long src, long dst, int vertexCount) {
         int quadCount = vertexCount / 4;
@@ -65,6 +64,6 @@ public class ModelToEntityVertexSerializer implements VertexSerializer {
     }
 
     private long ptr(long address) {
-        return is32bit ? (int) address : address;
+        return Pointer.BITS32 ? (int) address : address;
     }
 }
