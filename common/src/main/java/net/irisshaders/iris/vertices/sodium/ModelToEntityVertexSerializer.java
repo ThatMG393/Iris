@@ -12,103 +12,67 @@ import org.lwjgl.system.MemoryUtil;
 public class ModelToEntityVertexSerializer implements VertexSerializer {
     @Override
     public void serialize(long src, long dst, int vertexCount) {
-        int quadCount = vertexCount >> 2; // Faster division by 4
-        int entityVertexStride = EntityVertex.STRIDE;
-        int entityVertexSize = IrisVertexFormats.ENTITY.getVertexSize();
+        // Only accept quads, to be safe
+        int quadCount = vertexCount << 2;
+        // Cache stride values
+        final int srcVertexSize = EntityVertex.STRIDE;
+        final int dstVertexSize = IrisVertexFormats.ENTITY.getVertexSize();
 
         for (int i = 0; i < quadCount; i++) {
-            // Bitwise normal extraction
-            int normal = MemoryUtil.memGetInt(src + 32);
-            int normalX = (normal & 0xFF) - 128;
-            int normalY = ((normal >> 8) & 0xFF) - 128;
-            int normalZ = ((normal >> 16) & 0xFF) - 128;
-
-            // Bitwise float reading - faster than Float.intBitsToFloat
+            // For each quad, work with a local pointer to the quad's first vertex
+            long quadSrc = src;
+            
+            // Read the normal from the first vertex of the quad (offset 32)
+            int normal = MemoryUtil.memGetInt(quadSrc + 32);
+            
+            // Compute tangent using values from the quad’s vertices.
             int tangent = NormalHelper.computeTangent(
-                null, 
-                normalX, 
-                normalY, 
-                normalZ, 
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 4)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 8)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 16)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 20)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 4 + entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 8 + entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 16 + entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 20 + entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 2 * entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 4 + 2 * entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 8 + 2 * entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 16 + 2 * entityVertexStride)),
-                bitwiseIntToFloat(MemoryUtil.memGetInt(src + 20 + 2 * entityVertexStride))
+                null,
+                NormI8.unpackX(normal),
+                NormI8.unpackY(normal),
+                NormI8.unpackZ(normal),
+                MemoryUtil.memGetFloat(quadSrc),
+                MemoryUtil.memGetFloat(quadSrc + 4),
+                MemoryUtil.memGetFloat(quadSrc + 8),
+                MemoryUtil.memGetFloat(quadSrc + 16),
+                MemoryUtil.memGetFloat(quadSrc + 20),
+                MemoryUtil.memGetFloat(quadSrc + srcVertexSize),
+                MemoryUtil.memGetFloat(quadSrc + 4 + srcVertexSize),
+                MemoryUtil.memGetFloat(quadSrc + 8 + srcVertexSize),
+                MemoryUtil.memGetFloat(quadSrc + 16 + srcVertexSize),
+                MemoryUtil.memGetFloat(quadSrc + 20 + srcVertexSize),
+                MemoryUtil.memGetFloat(quadSrc + srcVertexSize * 2),
+                MemoryUtil.memGetFloat(quadSrc + 4 + srcVertexSize * 2),
+                MemoryUtil.memGetFloat(quadSrc + 8 + srcVertexSize * 2),
+                MemoryUtil.memGetFloat(quadSrc + 16 + srcVertexSize * 2),
+                MemoryUtil.memGetFloat(quadSrc + 20 + srcVertexSize * 2)
             );
 
-            // Bitwise midpoint calculation
-            int midUBits = 0, midVBits = 0;
+            // Calculate average (mid) U and V texture coordinates across the quad’s vertices
+            float midU = 0, midV = 0;
             for (int vertex = 0; vertex < 4; vertex++) {
-                midUBits += MemoryUtil.memGetInt(src + 16 + (entityVertexStride * vertex));
-                midVBits += MemoryUtil.memGetInt(src + 20 + (entityVertexStride * vertex));
+                midU += MemoryUtil.memGetFloat(quadSrc + 16 + (srcVertexSize * vertex));
+                midV += MemoryUtil.memGetFloat(quadSrc + 20 + (srcVertexSize * vertex));
             }
-            
-            // Bitwise average (division by 4)
-            midUBits >>= 2;
-            midVBits >>= 2;
+            midU /= 4;
+            midV /= 4;
 
-            // Serialize each vertex
+            // Process each of the quad's 4 vertices.
             for (int j = 0; j < 4; j++) {
-                MemoryIntrinsics.copyMemory(src, dst, 36);
-                
-                // Bitwise short casting and state extraction
-                int renderedEntity = CapturedRenderingState.INSTANCE.getCurrentRenderedEntity();
-                int renderedBlockEntity = CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity();
-                int renderedItem = CapturedRenderingState.INSTANCE.getCurrentRenderedItem();
-
-                MemoryUtil.memPutShort(dst + 36, (short)(renderedEntity & 0xFFFF));
-                MemoryUtil.memPutShort(dst + 38, (short)(renderedBlockEntity & 0xFFFF));
-                MemoryUtil.memPutShort(dst + 40, (short)(renderedItem & 0xFFFF));
-                
-                // Bitwise float writing
-                MemoryUtil.memPutInt(dst + 42, midUBits);
-                MemoryUtil.memPutInt(dst + 46, midVBits);
+                // Copy the first 36 bytes from the current vertex to the destination.
+                MemoryIntrinsics.copyMemory(quadSrc + (srcVertexSize * j), dst, 36);
+                MemoryUtil.memPutShort(dst + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
+                MemoryUtil.memPutShort(dst + 38, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
+                MemoryUtil.memPutShort(dst + 40, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
+                MemoryUtil.memPutFloat(dst + 42, midU);
+                MemoryUtil.memPutFloat(dst + 46, midV);
                 MemoryUtil.memPutInt(dst + 50, tangent);
 
-                src += entityVertexStride;
-                dst += entityVertexSize;
+                // Increment the destination pointer by the destination vertex size.
+                dst += dstVertexSize;
             }
+            // Move the source pointer forward by 4 vertices (one quad).
+            src += srcVertexSize * 4;
         }
-    }
-
-    // Ultra-fast bitwise int to float conversion
-    private static float bitwiseIntToFloat(int bits) {
-        if ((bits & 0x7F800000) == 0) return 0.0f;  // Zero or subnormal
-    
-        // Extract components with minimal branching
-        int sign = bits & 0x80000000;
-        int exponent = (bits & 0x7F800000) >>> 23;
-        int mantissa = bits & 0x007FFFFF;
-
-        // Handle special cases with minimal overhead
-        if (exponent == 0xFF) {
-            return (mantissa != 0) ? Float.NaN : 
-                   (sign != 0) ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
-        }
-   
-        // Normalized number reconstruction
-        if (exponent > 0) {
-            exponent -= 127;  // Remove bias
-            float value = 1.0f + (mantissa / 8388608.0f);  // 1 + m / 2^23
-        
-            // Precise power of 2 multiplication
-            value *= (1 << exponent);
-        
-            // Apply sign
-            return sign != 0 ? -value : value;
-        }
-
-        // Subnormal number handling
-        return 0.0f;
     }
 }
