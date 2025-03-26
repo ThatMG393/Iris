@@ -8,6 +8,7 @@ import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.irisshaders.iris.Iris;
+import net.irisshaders.iris.compat.SkipList;
 import net.irisshaders.iris.gl.GLDebug;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.blending.AlphaTest;
@@ -21,6 +22,7 @@ import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.gl.sampler.SamplerHolder;
 import net.irisshaders.iris.gl.texture.TextureType;
 import net.irisshaders.iris.gl.uniform.DynamicLocationalUniformHolder;
+import net.irisshaders.iris.mixinterface.ShaderInstanceInterface;
 import net.irisshaders.iris.pipeline.IrisRenderingPipeline;
 import net.irisshaders.iris.samplers.IrisSamplers;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
@@ -41,6 +43,7 @@ import org.lwjgl.opengl.GL46C;
 import org.lwjgl.opengl.KHRDebug;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -84,6 +87,8 @@ public class ExtendedShader extends CompiledShaderProgram {
 						  Consumer<DynamicLocationalUniformHolder> uniformCreator, BiConsumer<SamplerHolder, ImageHolder> samplerCreator, boolean isIntensity,
 						  IrisRenderingPipeline parent, @Nullable List<BufferBlendOverride> bufferBlendOverrides, CustomUniforms customUniforms) throws IOException {
 		super(programId);
+
+		((ShaderInstanceInterface) this).setShouldSkip(SkipList.NONE);
 
 		List<ShaderProgramConfig.Uniform> uniformList = new ArrayList<>();
 		List<ShaderProgramConfig.Sampler> samplerList = new ArrayList<>();
@@ -279,7 +284,6 @@ public class ExtendedShader extends CompiledShaderProgram {
 		this.GAME_TIME = super.getUniform("iris_GameTime");
 		this.MODEL_OFFSET = super.getUniform("iris_ModelOffset");
 	}
-
 
 	private void uploadIfNotNull(Uniform uniform) {
 		if (uniform != null) {
