@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import net.irisshaders.iris.compat.dh.DHCompat;
+import net.irisshaders.iris.compat.dh.DhFrameBufferWrapper;
 import net.irisshaders.iris.features.FeatureFlags;
 import net.irisshaders.iris.gl.GLDebug;
 import net.irisshaders.iris.gl.IrisRenderSystem;
@@ -99,6 +100,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.ARBClearTexture;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL15C;
 import org.lwjgl.opengl.GL20C;
 import org.lwjgl.opengl.GL21C;
@@ -190,6 +192,9 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 	private int currentNormalTexture;
 	private int currentSpecularTexture;
 	private ColorSpace currentColorSpace;
+	private GlFramebuffer defaultFB;
+	private GlFramebuffer defaultFBAlt;
+	private GlFramebuffer defaultFBShadow;
 
 	public IrisRenderingPipeline(ProgramSet programSet) {
 		ShaderPrinter.resetPrintState();
@@ -439,6 +444,7 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 				shadowRenderer = null;
 			}
 
+			defaultFBShadow = shadowRenderTargets.createFramebufferWritingToMain(new int[] {0});
 		} else {
 			this.shadowClearPasses = ImmutableList.of();
 			this.shadowClearPassesFull = ImmutableList.of();
@@ -505,6 +511,10 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 		}
 
 		currentColorSpace = IrisVideoSettings.colorSpace;
+		int defaultTex = packDirectives.getFallbackTex();
+
+		defaultFB = flippedAfterPrepare.contains(defaultTex) ? renderTargets.createFramebufferWritingToAlt(new int[] { defaultTex }) : renderTargets.createFramebufferWritingToMain(new int[] { defaultTex });
+		defaultFBAlt = flippedAfterTranslucent.contains(defaultTex) ? renderTargets.createFramebufferWritingToAlt(new int[] { defaultTex }) : renderTargets.createFramebufferWritingToMain(new int[] { defaultTex });
 	}
 
 	private ComputeProgram[] createShadowComputes(ComputeSource[] compute, ProgramSet programSet) {
@@ -1336,5 +1346,17 @@ public class IrisRenderingPipeline implements WorldRenderingPipeline, ShaderRend
 
 	public CloudSetting getDHCloudSetting() {
 		return dhCloudSetting;
+	}
+
+	public void bindDefault() {
+		if (isBeforeTranslucent) {
+			defaultFB.bind();
+		} else {
+			defaultFBAlt.bind();
+		}
+	}
+
+	public void bindDefaultShadow() {
+		defaultFBShadow.bind();
 	}
 }
