@@ -10,71 +10,85 @@ import net.irisshaders.iris.vertices.NormI8;
 import net.irisshaders.iris.vertices.NormalHelper;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.Pointer;
 
 public class GlyphExtVertexSerializer implements VertexSerializer {
     private static final int OFFSET_POSITION = 0;
     private static final int OFFSET_COLOR = 12;
     private static final int OFFSET_TEXTURE = 16;
-    private static final int OFFSET_MID_TEXTURE = 
-        IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.MID_TEXTURE_ELEMENT);
+    private static final int OFFSET_MID_TEXTURE = IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.MID_TEXTURE_ELEMENT);
     private static final int OFFSET_LIGHT = 24;
-    private static final int OFFSET_NORMAL = 
-        IrisVertexFormats.GLYPH.getOffset(VertexFormatElement.NORMAL);
-    private static final int OFFSET_TANGENT = 
-        IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.TANGENT_ELEMENT);
+    private static final int OFFSET_NORMAL = IrisVertexFormats.GLYPH.getOffset(VertexFormatElement.NORMAL);
+    private static final int OFFSET_TANGENT = IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.TANGENT_ELEMENT);
+
+    // A helper quad view object used for computing normals.
     private static final QuadViewEntity quad = new QuadViewEntity();
     private static final Vector3f saveNormal = new Vector3f();
-    private static final int STRIDE = IrisVertexFormats.GLYPH.getVertexSize();
+    private static final int DST_STRIDE = IrisVertexFormats.GLYPH.getVertexSize();
 
-    private static void endQuad(float uSum, float vSum, long src, long dst) {
-        uSum *= 0.25f;
-        vSum *= 0.25f;
+    /**
+     * Write the averaged texture coordinates, computed normal, and tangent for the quad.
+     * Here we compute a base pointer for the quad vertices and then iterate over them.
+     */
+    private static void endQuad(float uSum, float vSum, long dstLastVertex) {
+        // Compute the average UV values.
+        float midU = uSum * 0.25f;
+        float midV = vSum * 0.25f;
 
-        quad.setup(dst, STRIDE);
+        // Compute the pointer to the first vertex of the quad.
+        long quadBaseDst = dstLastVertex - DST_STRIDE * 3;
+        // Setup quad view using the first vertex pointer.
+        quad.setup(quadBaseDst, DST_STRIDE);
 
-        float normalX, normalY, normalZ;
-
+        // Compute the face normal using the quad view.
         NormalHelper.computeFaceNormal(saveNormal, quad);
-        normalX = saveNormal.x;
-        normalY = saveNormal.y;
-        normalZ = saveNormal.z;
         int normal = NormI8.pack(saveNormal);
+        int tangent = NormalHelper.computeTangent(saveNormal.x, saveNormal.y, saveNormal.z, quad);
 
-        int tangent = NormalHelper.computeTangent(normalX, normalY, normalZ, quad);
-
-        for (int vertex = 0; vertex < 4; vertex++) {
-            long offset = dst - (((long) STRIDE * vertex) & 0xFFFFFFFFL);
-            MemoryUtil.memPutInt(offset + OFFSET_MID_TEXTURE, Float.floatToRawIntBits(uSum));
-            MemoryUtil.memPutInt(offset + (OFFSET_MID_TEXTURE + 4), Float.floatToRawIntBits(vSum));
-            MemoryUtil.memPutInt(offset + OFFSET_NORMAL, normal);
-            MemoryUtil.memPutInt(offset + OFFSET_TANGENT, tangent);
+        // Now update each vertex in the quad with mid texture coordinates, normal, and tangent.
+        for (int i = 0; i < 4; i++) {
+            long vertexDst = quadBaseDst + (long) DST_STRIDE * i;
+            MemoryUtil.memPutFloat(vertexDst + OFFSET_MID_TEXTURE, midU);
+            MemoryUtil.memPutFloat(vertexDst + OFFSET_MID_TEXTURE + 4, midV);
+            MemoryUtil.memPutInt(vertexDst + OFFSET_NORMAL, normal);
+            MemoryUtil.memPutInt(vertexDst + OFFSET_TANGENT, tangent);
         }
     }
 
     @Override
     public void serialize(long src, long dst, int vertexCount) {
-        float uSum = 0.0f, vSum = 0.0f;
+        // Cache source and destination vertex sizes.
+        final int SRC_STRIDE = DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP.getVertexSize();
+        final int quadVertexCount = vertexCount; // Typically 4 for a quad.
+        float uSum = 0.0f;
+        float vSum = 0.0f;
 
-        for (int i = 0; i < vertexCount; i++) {
-            float u = Float.intBitsToFloat(MemoryUtil.memGetInt(src + OFFSET_TEXTURE));
-            float v = Float.intBitsToFloat(MemoryUtil.memGetInt(src + OFFSET_TEXTURE + 4));
-
+        // Process each vertex in the quad.
+        // We use an index variable and local copies of src and dst pointers for clarity.
+        long currentSrc = src;
+        long currentDst = dst;
+        for (int i = 0; i < quadVertexCount; i++) {
+            // Read the texture coordinates from the source.
+            float u = MemoryUtil.memGetFloat(currentSrc + OFFSET_TEXTURE);
+            float v = MemoryUtil.memGetFloat(currentSrc + OFFSET_TEXTURE + 4);
             uSum += u;
             vSum += v;
 
-            MemoryIntrinsics.copyMemory(src, dst, 28);
+            // Copy the first 28 bytes of the vertex data.
+            MemoryIntrinsics.copyMemory(currentSrc, currentDst, 28);
 
-            MemoryUtil.memPutShort(dst + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
-            MemoryUtil.memPutShort(dst + 34, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-            MemoryUtil.memPutShort(dst + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
+            // Write the extra per-vertex rendering state.
+            MemoryUtil.memPutShort(currentDst + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
+            MemoryUtil.memPutShort(currentDst + 34, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
+            MemoryUtil.memPutShort(currentDst + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
 
-            if (i != 3) {
-                src += DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP.getVertexSize();
-                dst += STRIDE;
+            // Advance to the next vertex except after the last one.
+            if (i != quadVertexCount - 1) {
+                currentSrc += SRC_STRIDE;
+                currentDst += DST_STRIDE;
             }
         }
 
-        endQuad(uSum, vSum, src, dst);
+        // At this point, currentSrc and currentDst point to the last vertex of the quad.
+        endQuad(uSum, vSum, currentDst);
     }
 }
