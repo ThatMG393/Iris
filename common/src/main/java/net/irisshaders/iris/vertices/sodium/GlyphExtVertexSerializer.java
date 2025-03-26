@@ -10,10 +10,9 @@ import net.irisshaders.iris.vertices.NormI8;
 import net.irisshaders.iris.vertices.NormalHelper;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.Pointer;
 
 public class GlyphExtVertexSerializer implements VertexSerializer {
-    private static final boolean is32bit = (MemoryUtil.POINTER_SIZE == 4);
-    
     private static final int OFFSET_POSITION = 0;
     private static final int OFFSET_COLOR = 12;
     private static final int OFFSET_TEXTURE = 16;
@@ -27,7 +26,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
 
     // Helper method to ensure that pointers are properly cast on 32-bit systems.
     private static long ptr(long address) {
-        return is32bit ? (int) address : address;
+        return Pointer.BITS32 ? (int) address : address;
     }
 
     private static void endQuad(float uSum, float vSum, long src, long dst) {
