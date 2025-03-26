@@ -13,7 +13,7 @@ public class ModelToEntityVertexSerializer implements VertexSerializer {
     @Override
     public void serialize(long src, long dst, int vertexCount) {
         // Only accept quads, to be safe
-        int quadCount = vertexCount << 2;
+        int quadCount = vertexCount >> 2;
         // Cache stride values
         final int srcVertexSize = EntityVertex.STRIDE;
         final int dstVertexSize = IrisVertexFormats.ENTITY.getVertexSize();
