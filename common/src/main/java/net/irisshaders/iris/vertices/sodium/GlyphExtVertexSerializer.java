@@ -69,7 +69,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
             vSum += v;
 
             // Aligned memory copy
-            MemoryIntrinsics.copyMemory(alignedSrc, alignedDst, 28L);
+            MemoryIntrinsics.copyMemory(alignedSrc, alignedDst, 28);
 
             // Safe short conversion with explicit bounds
             short entityId = (short) Math.min(
