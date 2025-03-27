@@ -70,7 +70,7 @@ public class ModelToEntityVertexSerializer implements VertexSerializer {
 
             // Vertex processing with aligned memory
             for (int j = 0; j < 4; j++) {
-                MemoryIntrinsics.copyMemory(alignedSrc, alignedDst, 36L);
+                MemoryIntrinsics.copyMemory(alignedSrc, alignedDst, 36);
                 
                 // Safe short conversion
                 short entityId = (short) Math.min(
