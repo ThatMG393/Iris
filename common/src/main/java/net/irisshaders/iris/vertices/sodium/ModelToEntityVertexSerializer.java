@@ -11,106 +11,91 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Pointer;
 
 public class ModelToEntityVertexSerializer implements VertexSerializer {
+    private static final long OFFSET_MASK = 0xFFFFFFFFL;
+    private static final int POINTER_ALIGNMENT = 1 << Pointer.POINTER_SHIFT;
+    private static final int ENTITY_STRIDE;
+
+    static {
+        // Align stride to pointer boundaries
+        int baseStride = IrisVertexFormats.ENTITY.getVertexSize();
+        ENTITY_STRIDE = (baseStride + POINTER_ALIGNMENT - 1) & ~(POINTER_ALIGNMENT - 1);
+    }
 
     @Override
     public void serialize(long src, long dst, int vertexCount) {
+        // Align pointers to system boundaries
+        long alignedSrc = src & ~((1L << Pointer.POINTER_SHIFT) - 1);
+        long alignedDst = dst & ~((1L << Pointer.POINTER_SHIFT) - 1);
+
         int quadCount = vertexCount / 4;
-        // Branch on architecture: use int arithmetic if running on 32-bit.
-        if (Pointer.BITS32) {
-            // Cast src and dst pointers to int once.
-            int src32 = (int) src;
-            int dst32 = (int) dst;
-            for (int i = 0; i < quadCount; i++) {
-                int normal = MemoryUtil.memGetInt(src32 + 32);
-                int tangent = NormalHelper.computeTangent(
-                    null,
-                    NormI8.unpackX(normal),
-                    NormI8.unpackY(normal),
-                    NormI8.unpackZ(normal),
-                    MemoryUtil.memGetFloat(src32),
-                    MemoryUtil.memGetFloat(src32 + 4),
-                    MemoryUtil.memGetFloat(src32 + 8),
-                    MemoryUtil.memGetFloat(src32 + 16),
-                    MemoryUtil.memGetFloat(src32 + 20),
-                    MemoryUtil.memGetFloat(src32 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src32 + 4 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src32 + 8 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src32 + 16 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src32 + 20 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src32 + EntityVertex.STRIDE * 2),
-                    MemoryUtil.memGetFloat(src32 + 4 + EntityVertex.STRIDE * 2),
-                    MemoryUtil.memGetFloat(src32 + 8 + EntityVertex.STRIDE * 2),
-                    MemoryUtil.memGetFloat(src32 + 16 + EntityVertex.STRIDE * 2),
-                    MemoryUtil.memGetFloat(src32 + 20 + EntityVertex.STRIDE * 2)
+        for (int i = 0; i < quadCount; i++) {
+            // Safe normal unpacking with bit manipulation
+            int normalPacked = MemoryUtil.memGetInt(alignedSrc + 32L);
+            float normalX = NormI8.unpackX(normalPacked);
+            float normalY = NormI8.unpackY(normalPacked);
+            float normalZ = NormI8.unpackZ(normalPacked);
+
+            // Compute tangent with explicit coordinate retrieval
+            int tangent = NormalHelper.computeTangent(null, 
+                normalX, normalY, normalZ, 
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 4L)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 8L)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 16L)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 20L)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 4L + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 8L + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 16L + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 20L + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + EntityVertex.STRIDE + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 4L + EntityVertex.STRIDE + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 8L + EntityVertex.STRIDE + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 16L + EntityVertex.STRIDE + EntityVertex.STRIDE)),
+                Float.intBitsToFloat(MemoryUtil.memGetInt(alignedSrc + 20L + EntityVertex.STRIDE + EntityVertex.STRIDE))
+            );
+
+            // Mid-texture coordinate computation
+            float midU = 0, midV = 0;
+            for (int vertex = 0; vertex < 4; vertex++) {
+                midU += Float.intBitsToFloat(
+                    MemoryUtil.memGetInt(alignedSrc + 16L + (EntityVertex.STRIDE * vertex))
                 );
-
-                float midU = 0, midV = 0;
-                for (int vertex = 0; vertex < 4; vertex++) {
-                    midU += MemoryUtil.memGetFloat(src32 + 16 + (EntityVertex.STRIDE * vertex));
-                    midV += MemoryUtil.memGetFloat(src32 + 20 + (EntityVertex.STRIDE * vertex));
-                }
-                midU /= 4;
-                midV /= 4;
-
-                for (int j = 0; j < 4; j++) {
-                    MemoryIntrinsics.copyMemory(src32, dst32, 36);
-                    MemoryUtil.memPutShort(dst32 + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
-                    MemoryUtil.memPutShort(dst32 + 38, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-                    MemoryUtil.memPutShort(dst32 + 40, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
-                    MemoryUtil.memPutFloat(dst32 + 42, midU);
-                    MemoryUtil.memPutFloat(dst32 + 46, midV);
-                    MemoryUtil.memPutInt(dst32 + 50, tangent);
-
-                    src32 += EntityVertex.STRIDE;
-                    dst32 += IrisVertexFormats.ENTITY.getVertexSize();
-                }
+                midV += Float.intBitsToFloat(
+                    MemoryUtil.memGetInt(alignedSrc + 20L + (EntityVertex.STRIDE * vertex))
+                );
             }
-        } else {
-            // 64-bit: use long arithmetic directly.
-            for (int i = 0; i < quadCount; i++) {
-                int normal = MemoryUtil.memGetInt(src + 32);
-                int tangent = NormalHelper.computeTangent(
-                    null,
-                    NormI8.unpackX(normal),
-                    NormI8.unpackY(normal),
-                    NormI8.unpackZ(normal),
-                    MemoryUtil.memGetFloat(src),
-                    MemoryUtil.memGetFloat(src + 4),
-                    MemoryUtil.memGetFloat(src + 8),
-                    MemoryUtil.memGetFloat(src + 16),
-                    MemoryUtil.memGetFloat(src + 20),
-                    MemoryUtil.memGetFloat(src + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src + 4 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src + 8 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src + 16 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src + 20 + EntityVertex.STRIDE),
-                    MemoryUtil.memGetFloat(src + EntityVertex.STRIDE * 2),
-                    MemoryUtil.memGetFloat(src + 4 + EntityVertex.STRIDE * 2),
-                    MemoryUtil.memGetFloat(src + 8 + EntityVertex.STRIDE * 2),
-                    MemoryUtil.memGetFloat(src + 16 + EntityVertex.STRIDE * 2),
-                    MemoryUtil.memGetFloat(src + 20 + EntityVertex.STRIDE * 2)
+            midU /= 4;
+            midV /= 4;
+
+            // Vertex processing with aligned memory
+            for (int j = 0; j < 4; j++) {
+                MemoryIntrinsics.copyMemory(alignedSrc, alignedDst, 36L);
+                
+                // Safe short conversion
+                short entityId = (short) Math.min(
+                    Short.MAX_VALUE, 
+                    CapturedRenderingState.INSTANCE.getCurrentRenderedEntity()
+                );
+                short blockEntityId = (short) Math.min(
+                    Short.MAX_VALUE, 
+                    CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity()
+                );
+                short itemId = (short) Math.min(
+                    Short.MAX_VALUE, 
+                    CapturedRenderingState.INSTANCE.getCurrentRenderedItem()
                 );
 
-                float midU = 0, midV = 0;
-                for (int vertex = 0; vertex < 4; vertex++) {
-                    midU += MemoryUtil.memGetFloat(src + 16 + (EntityVertex.STRIDE * vertex));
-                    midV += MemoryUtil.memGetFloat(src + 20 + (EntityVertex.STRIDE * vertex));
-                }
-                midU /= 4;
-                midV /= 4;
+                MemoryUtil.memPutShort(alignedDst + 36L, entityId);
+                MemoryUtil.memPutShort(alignedDst + 38L, blockEntityId);
+                MemoryUtil.memPutShort(alignedDst + 40L, itemId);
+                
+                MemoryUtil.memPutInt(alignedDst + 42L, Float.floatToIntBits(midU));
+                MemoryUtil.memPutInt(alignedDst + 46L, Float.floatToIntBits(midV));
+                MemoryUtil.memPutInt(alignedDst + 50L, tangent);
 
-                for (int j = 0; j < 4; j++) {
-                    MemoryIntrinsics.copyMemory(src, dst, 36);
-                    MemoryUtil.memPutShort(dst + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
-                    MemoryUtil.memPutShort(dst + 38, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-                    MemoryUtil.memPutShort(dst + 40, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
-                    MemoryUtil.memPutFloat(dst + 42, midU);
-                    MemoryUtil.memPutFloat(dst + 46, midV);
-                    MemoryUtil.memPutInt(dst + 50, tangent);
-
-                    src += EntityVertex.STRIDE;
-                    dst += IrisVertexFormats.ENTITY.getVertexSize();
-                }
+                alignedSrc += EntityVertex.STRIDE;
+                alignedDst += ENTITY_STRIDE;
             }
         }
     }
