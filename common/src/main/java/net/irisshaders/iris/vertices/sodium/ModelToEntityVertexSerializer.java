@@ -54,9 +54,9 @@ public class ModelToEntityVertexSerializer implements VertexSerializer {
                 // Ensure dst + 42 is 4-byte aligned before writing floats
                 long alignedDst = (dst + 42 + 3) & ~3; // Align to the next 4-byte boundary
 
-                System.out.println("Aligned 53: MemoryUtil.memPutFloat(" + alignedDst + ", " + midU + ");");
+                // System.out.println("Aligned 53: MemoryUtil.memPutFloat(" + alignedDst + ", " + midU + ");");
                 MemoryUtil.memPutFloat(alignedDst, midU);
-                System.out.println("Aligned 54: MemoryUtil.memPutFloat(" + (alignedDst + 4) + ", " + midV + ");");
+                // System.out.println("Aligned 54: MemoryUtil.memPutFloat(" + (alignedDst + 4) + ", " + midV + ");");
                 MemoryUtil.memPutFloat(alignedDst + 4, midV);
                 
                 MemoryUtil.memPutInt(alignedDst + 8, tangent);
