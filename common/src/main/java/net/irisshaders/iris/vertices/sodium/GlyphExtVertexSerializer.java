@@ -10,92 +10,69 @@ import net.irisshaders.iris.vertices.NormI8;
 import net.irisshaders.iris.vertices.NormalHelper;
 import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.Pointer;
 
 public class GlyphExtVertexSerializer implements VertexSerializer {
-    private static final long OFFSET_MASK = 0xFFFFFFFFL;
-    private static final int POINTER_ALIGNMENT = 1 << Pointer.POINTER_SHIFT;
+	private static final int OFFSET_POSITION = 0;
+	private static final int OFFSET_COLOR = 12;
+	private static final int OFFSET_TEXTURE = 16;
+	private static final int OFFSET_MID_TEXTURE = IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.MID_TEXTURE_ELEMENT);
+	private static final int OFFSET_LIGHT = 24;
+	private static final int OFFSET_NORMAL = IrisVertexFormats.GLYPH.getOffset(VertexFormatElement.NORMAL);
+	private static final int OFFSET_TANGENT = IrisVertexFormats.GLYPH.getOffset(IrisVertexFormats.TANGENT_ELEMENT);
+	private static final QuadViewEntity quad = new QuadViewEntity();
+	private static final Vector3f saveNormal = new Vector3f();
+	private static final int STRIDE = IrisVertexFormats.GLYPH.getVertexSize();
 
-    private static final QuadViewEntity quad = new QuadViewEntity();
-    private static final int STRIDE;
+	private static void endQuad(float uSum, float vSum, long dst) {
+		uSum *= 0.25f;
+		vSum *= 0.25f;
 
-    static {
-        // Align stride to pointer boundaries
-        int baseStride = IrisVertexFormats.GLYPH.getVertexSize();
-        STRIDE = (baseStride + POINTER_ALIGNMENT - 1) & ~(POINTER_ALIGNMENT - 1);
-    }
+		quad.setup(dst, STRIDE);
 
-    private void endQuad(float uSum, float vSum, long src, long dst) {
-        uSum *= 0.25f;
-        vSum *= 0.25f;
+		float normalX, normalY, normalZ;
 
-        // Align memory pointers
-        long alignedDst = dst & ~((1L << Pointer.POINTER_SHIFT) - 1);
-        quad.setup(alignedDst, STRIDE);
+		NormalHelper.computeFaceNormal(saveNormal, quad);
+		normalX = saveNormal.x;
+		normalY = saveNormal.y;
+		normalZ = saveNormal.z;
+		int normal = NormI8.pack(saveNormal);
 
-        Vector3f faceNormal = new Vector3f();
-        NormalHelper.computeFaceNormal(faceNormal, quad);
-        
-        int packedNormal = NormI8.pack(faceNormal);
-        int packedTangent = NormalHelper.computeTangent(
-            faceNormal.x, faceNormal.y, faceNormal.z, quad
-        );
+		int tangent = NormalHelper.computeTangent(normalX, normalY, normalZ, quad);
 
-        for (int vertex = 0; vertex < 4; vertex++) {
-            long vertexOffset = alignedDst - ((long) STRIDE * vertex & OFFSET_MASK);
-            
-            MemoryUtil.memPutInt(vertexOffset + 16, Float.floatToIntBits(uSum));
-            MemoryUtil.memPutInt(vertexOffset + 20, Float.floatToIntBits(vSum));
-            MemoryUtil.memPutInt(vertexOffset + 32, packedNormal);
-            MemoryUtil.memPutInt(vertexOffset + 36, packedTangent);
-        }
-    }
+		for (long vertex = 0; vertex < 4; vertex++) {
+			MemoryUtil.memPutFloat(dst + OFFSET_MID_TEXTURE - STRIDE * vertex, uSum);
+			MemoryUtil.memPutFloat(dst + (OFFSET_MID_TEXTURE + 4) - STRIDE * vertex, vSum);
+			MemoryUtil.memPutInt(dst + OFFSET_NORMAL - STRIDE * vertex, normal);
+			MemoryUtil.memPutInt(dst + OFFSET_TANGENT - STRIDE * vertex, tangent);
+		}
+	}
 
-    @Override
-    public void serialize(long src, long dst, int vertexCount) {
-        // Align source and destination pointers
-        long alignedSrc = src & ~((1L << Pointer.POINTER_SHIFT) - 1);
-        long alignedDst = dst & ~((1L << Pointer.POINTER_SHIFT) - 1);
+	@Override
+	public void serialize(long src, long dst, int vertexCount) {
+		// The code below assumes there are exactly 4 vertices being pushed
+		if (vertexCount != 4) {
+			throw new IllegalStateException();
+		}
 
-        float uSum = 0.0f, vSum = 0.0f;
+		float uSum = 0.0f, vSum = 0.0f;
 
-        for (int i = 0; i < vertexCount; i++) {
-            // Use bit manipulation for safe memory access
-            long texOffset = alignedSrc + 16L & OFFSET_MASK;
-            float u = Float.intBitsToFloat(MemoryUtil.memGetInt(texOffset));
-            float v = Float.intBitsToFloat(MemoryUtil.memGetInt(texOffset + 4L));
+		for (int i = 0; i < vertexCount; i++) {
+			float u = MemoryUtil.memGetFloat(src + OFFSET_TEXTURE);
+			float v = MemoryUtil.memGetFloat(src + OFFSET_TEXTURE + 4);
 
-            uSum += u;
-            vSum += v;
+			uSum += u;
+			vSum += v;
 
-            // Aligned memory copy
-            MemoryIntrinsics.copyMemory(alignedSrc, alignedDst, 28);
+			MemoryUtil.memCopy(src, dst, 28);
 
-            // Safe short conversion with explicit bounds
-            short entityId = (short) Math.min(
-                Short.MAX_VALUE, 
-                CapturedRenderingState.INSTANCE.getCurrentRenderedEntity()
-            );
-            short blockEntityId = (short) Math.min(
-                Short.MAX_VALUE, 
-                CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity()
-            );
-            short itemId = (short) Math.min(
-                Short.MAX_VALUE, 
-                CapturedRenderingState.INSTANCE.getCurrentRenderedItem()
-            );
+			MemoryUtil.memPutShort(dst + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
+			MemoryUtil.memPutShort(dst + 34, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
+			MemoryUtil.memPutShort(dst + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
 
-            // Write aligned memory
-            MemoryUtil.memPutShort(alignedDst + 32L, entityId);
-            MemoryUtil.memPutShort(alignedDst + 34L, blockEntityId);
-            MemoryUtil.memPutShort(alignedDst + 36L, itemId);
+			src += DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP.getVertexSize();
+			dst += STRIDE;
+		}
 
-            if (i != 3) {
-                alignedSrc += DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP.getVertexSize();
-                alignedDst += STRIDE;
-            }
-        }
-
-        endQuad(uSum, vSum, src, dst);
-    }
+		endQuad(uSum, vSum, dst - STRIDE); // Point to the *start* of the last vertex.
+	}
 }
