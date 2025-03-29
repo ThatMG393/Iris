@@ -40,10 +40,13 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
 		int tangent = NormalHelper.computeTangent(normalX, normalY, normalZ, quad);
 
 		for (long vertex = 0; vertex < 4; vertex++) {
-			MemoryUtil.memPutFloat(dst + OFFSET_MID_TEXTURE - STRIDE * vertex, uSum);
-			MemoryUtil.memPutFloat(dst + (OFFSET_MID_TEXTURE + 4) - STRIDE * vertex, vSum);
-			MemoryUtil.memPutInt(dst + OFFSET_NORMAL - STRIDE * vertex, normal);
-			MemoryUtil.memPutInt(dst + OFFSET_TANGENT - STRIDE * vertex, tangent);
+			long alignedDst = (dst - STRIDE * vertex + 3) & ~3; // Align to 4-byte boundary
+			
+			// System.out.println("Writing to: " + alignedDst);
+			MemoryUtil.memPutFloat(alignedDst + OFFSET_MID_TEXTURE, uSum);
+			MemoryUtil.memPutFloat(alignedDst + OFFSET_MID_TEXTURE + 4, vSum);
+			MemoryUtil.memPutInt(alignedDst + OFFSET_NORMAL, normal);
+			MemoryUtil.memPutInt(alignedDst + OFFSET_TANGENT, tangent);
 		}
 	}
 
@@ -63,7 +66,7 @@ public class GlyphExtVertexSerializer implements VertexSerializer {
 			uSum += u;
 			vSum += v;
 
-			MemoryUtil.memCopy(src, dst, 28);
+			MemoryIntrinsics.copyMemory(src, dst, 28);
 
 			MemoryUtil.memPutShort(dst + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
 			MemoryUtil.memPutShort(dst + 34, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
