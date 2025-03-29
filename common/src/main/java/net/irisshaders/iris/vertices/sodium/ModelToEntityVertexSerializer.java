@@ -50,11 +50,16 @@ public class ModelToEntityVertexSerializer implements VertexSerializer {
                 MemoryUtil.memPutShort(dst + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
                 MemoryUtil.memPutShort(dst + 38, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
                 MemoryUtil.memPutShort(dst + 40, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
-				System.out.println("53: MemoryUtil.memPutFloat(" + (dst + 42) + ", " + midU + ");");
-                MemoryUtil.memPutFloat(dst + 42, midU);
-				System.out.println("54: MemoryUtil.memPutFloat(" + (dst + 46) + ", " + midV + ");");
-                MemoryUtil.memPutFloat(dst + 46, midV);
-                MemoryUtil.memPutInt(dst + 50, tangent);
+
+                // Ensure dst + 42 is 4-byte aligned before writing floats
+                long alignedDst = (dst + 42 + 3) & ~3; // Align to the next 4-byte boundary
+
+                System.out.println("Aligned 53: MemoryUtil.memPutFloat(" + alignedDst + ", " + midU + ");");
+                MemoryUtil.memPutFloat(alignedDst, midU);
+                System.out.println("Aligned 54: MemoryUtil.memPutFloat(" + (alignedDst + 4) + ", " + midV + ");");
+                MemoryUtil.memPutFloat(alignedDst + 4, midV);
+                
+                MemoryUtil.memPutInt(alignedDst + 8, tangent);
 
                 src += EntityVertex.STRIDE;
                 dst += IrisVertexFormats.ENTITY.getVertexSize();
