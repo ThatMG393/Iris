@@ -1,4 +1,4 @@
-package net.irisshaders.iris.compat.sodium.impl.vertex_format;
+package net.irisshaders.iris.vertices.sodium;
 
 import net.caffeinemc.mods.sodium.api.memory.MemoryIntrinsics;
 import net.caffeinemc.mods.sodium.api.util.NormI8;
