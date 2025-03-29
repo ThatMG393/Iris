@@ -50,7 +50,9 @@ public class ModelToEntityVertexSerializer implements VertexSerializer {
                 MemoryUtil.memPutShort(dst + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
                 MemoryUtil.memPutShort(dst + 38, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
                 MemoryUtil.memPutShort(dst + 40, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
+				System.out.println("53: MemoryUtil.memPutFloat(" + (dst + 42) + ", " + midU + ");");
                 MemoryUtil.memPutFloat(dst + 42, midU);
+				System.out.println("54: MemoryUtil.memPutFloat(" + (dst + 46) + ", " + midV + ");");
                 MemoryUtil.memPutFloat(dst + 46, midV);
                 MemoryUtil.memPutInt(dst + 50, tangent);
 
